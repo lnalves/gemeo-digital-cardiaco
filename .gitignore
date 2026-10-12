@@ -1,0 +1,26 @@
+# dados e artefatos (não versionar)
+data/raw/
+data/processed/
+artifacts/*
+!artifacts/.gitkeep
+*.sqlite
+*.keras
+*.h5
+*.npz
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# node
+dashboard/node_modules/
+dashboard/dist/
+
+# sistema / IDE
+.DS_Store
+.idea/
+.vscode/

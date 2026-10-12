@@ -1,0 +1,90 @@
+# Parâmetros do sistema. Qualquer alteração deve ser registrada em docs/DECISOES.md.
+seed: 42
+
+data:
+  raw_dir: data/raw/mitdb
+  processed_dir: data/processed
+  physionet_db: mitdb
+  lead: MLII
+  fs: 360
+  paced_records: ["102", "104", "107", "217"]
+  ds1: ["101", "106", "108", "109", "112", "114", "115", "116", "118", "119", "122",
+        "124", "201", "203", "205", "207", "208", "209", "215", "220", "223", "230"]
+  ds2: ["100", "103", "105", "111", "113", "117", "121", "123", "200", "202", "210",
+        "212", "213", "214", "219", "221", "222", "228", "231", "232", "233", "234"]
+  val_records: null          # preenchido por select_val_records() em F1 e então fixado aqui
+  n_val_records: 4
+  aami_map:
+    N: ["N", "L", "R", "e", "j"]
+    S: ["A", "a", "J", "S"]
+    V: ["V", "E"]
+    F: ["F"]
+    Q: ["/", "f", "Q"]
+  classes: ["N", "S", "V", "F", "Q"]
+
+signal:
+  bandpass_hz: [0.5, 40.0]
+  filter_order: 4            # Butterworth, forma SOS, aplicação causal (D-02)
+  peak_match_tol_ms: 150     # ANSI/AAMI EC57
+
+segment:
+  pre_samples: 90            # 250 ms antes do R
+  post_samples: 166          # ~461 ms depois do R → 256 amostras
+  normalize: zscore
+
+features:
+  local_rr_beats: 10
+  qrs_search_ms: 100
+  qrs_slope_frac: 0.2
+  qrs_valid_range_ms: [40, 220]
+
+model:
+  context_beats: 5           # i-3 … i+1 (1 batimento futuro) — D-08
+  future_beats: 1
+  cnn_filters: [32, 64, 128]
+  cnn_kernels: [7, 5, 3]
+  lstm_units: 64
+  dense_units: 64
+  dropout: 0.3
+  lr: 0.001
+  batch_size: 256
+  max_epochs: 60
+  patience: 8
+  loss: weighted_ce          # weighted_ce | focal
+  focal_gamma: 2.0
+  class_weight_cap: 50.0
+
+profile:
+  calibration_seconds: 300
+  features: ["rr", "qrs_width", "r_amplitude"]
+  n_bins: 20                 # + 2 bins de transbordo (D-05)
+  range_percentiles: [1, 99]
+  eps: 1.0e-6
+  window_seconds: 60
+  step_seconds: 10
+  k: 2.0                     # ajustado em DS1-val (D-09)
+  alpha: 0.1                 # taxa de atualização (Eq. 10)
+  tuning_grid:
+    k: [1.0, 1.5, 2.0, 2.5, 3.0]
+    window_seconds: [30, 60, 90]
+  max_sensitivity_drop_pp: 5.0
+
+decision:
+  vt_consecutive_v: 3
+  episode_gap_s: 10
+
+engine:
+  chunk_seconds: 1.0
+  rpeak_source: detector     # detector | annotation (D-03)
+  use_profile: true
+  feedback_enabled: false    # SEMPRE false na avaliação quantitativa
+
+server:
+  host: 127.0.0.1
+  port: 8000
+  db_path: artifacts/cardiac_twin.sqlite
+  model_run: null            # caminho do run em artifacts/runs/ usado pelo servidor
+  cors_origins: ["http://localhost:5173"]
+
+paths:
+  runs_dir: artifacts/runs
