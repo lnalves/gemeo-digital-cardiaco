@@ -5,6 +5,7 @@ CLIs finas: só fazem parse de argumentos e chamam funções de `cardiac_twin`. 
 | Script | Fase | Função |
 |---|---|---|
 | `download_data.py` | F0 | baixa a MIT-BIH para `data/raw/mitdb` |
+| `check_env.py` | F0 | confere Python, TensorFlow, GPU (`--require-gpu`) e os 48 registros |
 | `build_dataset.py` | F1 | gera `data/processed/{ds1,ds2}.npz` |
 | `train.py` | F2 | treina o classificador (`--loss weighted_ce|focal`) |
 | `evaluate_classifier.py` | F2 | métricas por batimento em DS2 |

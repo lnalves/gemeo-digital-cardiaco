@@ -5,6 +5,7 @@ data:
   raw_dir: data/raw/mitdb
   processed_dir: data/processed
   physionet_db: mitdb
+  download_workers: 8        # registros baixados em paralelo (PhysioNet limita a vazão por conexão)
   lead: MLII
   fs: 360
   paced_records: ["102", "104", "107", "217"]
