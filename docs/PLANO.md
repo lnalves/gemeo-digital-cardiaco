@@ -16,19 +16,16 @@ Marque `[x]` ao concluir. Cada fase termina com testes verdes e um "Resumo para 
 | F6 | Dashboard | 23–26/10 | screenshots da 4.5 |
 | F7 | Testes funcionais, figuras, textos 4.5/4.6 | 25–28/10 | entrega |
 
-**Cortes de escopo se atrasar (nesta ordem):** Grad-CAM → agrupamento em episódios na UI → detector de R
-(usar `annotation`, declarar limitação) → tela de histórico (deixar só endpoint) → velocidade variável.
-
 ---
 
 ## F0 — Ambiente
 
-- [ ] Mac (desenvolvimento/servidor): `uv sync --extra dev` (Python 3.11, CPU).
+- [x] Mac (desenvolvimento/servidor): `uv sync --extra dev` (Python 3.11, CPU).
 - [ ] Máquina de treino: clonar o repo, `uv sync --extra dev --extra gpu-cuda` (WSL2 se for Windows) e confirmar
       `tf.config.list_physical_devices('GPU')` não vazio. Ver D-10.
-- [ ] `scripts/download_data.py`: baixa `mitdb` via `wfdb.dl_database` para `data/raw/mitdb` (idempotente).
-- [ ] `config.py`: carrega `configs/default.yaml` em dataclasses congeladas; `--config` sobrescreve.
-- [ ] `ruff` e `pytest` rodando (mesmo sem testes).
+- [x] `scripts/download_data.py`: baixa `mitdb` via `wfdb.dl_database` para `data/raw/mitdb` (idempotente).
+- [x] `config.py`: carrega `configs/default.yaml` em dataclasses congeladas; `--config` sobrescreve.
+- [x] `ruff` e `pytest` rodando (mesmo sem testes).
 
 **Aceite:** 48 registros presentes nas duas máquinas; `uv run pytest` executa; `python -c "import tensorflow"` ok.
 

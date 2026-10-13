@@ -24,3 +24,6 @@ dashboard/dist/
 .DS_Store
 .idea/
 .vscode/
+
+# resumos para o TC (locais)
+docs/resumos/

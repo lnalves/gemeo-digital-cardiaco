@@ -91,6 +91,17 @@ Toda mudança de parâmetro ou desvio do PLANO entra aqui com data.
 - Alertas próximos (`decision.episode_gap_s`) formam um episódio, para não inundar o especialista. Métricas
   primárias continuam por batimento; episódios/hora é métrica secundária.
 
+### D-13 — Carregamento da configuração e download paralelo (F0) · `aceita` (13/10)
+- **Config:** `cardiac_twin.config.load_config(path)` lê `configs/default.yaml` em dataclasses congeladas (listas
+  viram tuplas). `--config arquivo.yaml` é **mesclado** sobre o default (arquivo parcial basta). Chave desconhecida
+  ou ausente → erro, para pegar erro de digitação. `config_to_dict(cfg)` grava a config efetiva no run (regra 7).
+- **Download:** o PhysioNet limita a vazão a ~14 kB/s por conexão e o `wfdb.dl_database` usa só 2 conexões
+  (~1,7 h para os 48 registros). Novo parâmetro `data.download_workers: 8`: um registro por thread, cada um baixado
+  em pasta temporária e movido ao final — download interrompido não deixa arquivo truncado.
+- **Ferramentas:** `scripts/check_env.py` confere Python, TF, GPU (`--require-gpu`) e os 48 registros (aceite F0
+  nas duas máquinas). Ruff ≥ 0.9 formata blocos de código em Markdown; `*.md` foi excluído do `ruff format`.
+- **Impacto no TC:** nenhum.
+
 ---
 
 ## Resolvidas
