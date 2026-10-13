@@ -1,1 +1,1 @@
-"""Perfil estatístico do paciente: histogramas, divergência KL, limiar L = mu + k*sigma, atualização EMA (ARQUITETURA §5)."""
+"""Perfil do paciente: histogramas, divergência KL, limiar L = mu + k*sigma, EMA (ARQUITETURA §5)."""
