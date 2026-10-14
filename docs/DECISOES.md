@@ -116,6 +116,10 @@ Toda mudança de parâmetro ou desvio do PLANO entra aqui com data.
   o nome e a compute capability; só listar o dispositivo não detecta o problema 2.
 - **Desempenho de referência:** modelo de teste (CNN por batimento + BiLSTM, K = 5, 4096 amostras, lote 256):
   0,64 s/época na GPU × 1,64 s/época na CPU do WSL.
+- **Dados na máquina de treino:** o `download_data.py` no WSL foi interrompido por falta de memória no Windows
+  (6/48 registros). Os 48 registros foram baixados manualmente do PhysioNet (zip da MIT-BIH 1.0.0), conferidos
+  contra o `SHA256SUMS.txt` oficial (144 arquivos `.hea/.dat/.atr`, todos ok) e copiados para `data/raw/mitdb`.
+  Conteúdo idêntico ao do `wfdb.dl_database`; os extras do zip (`.xws`, `x_mitdb/`, `mitdbdir/`) não são usados.
 - **Consequência para F2:** com 4 GB de VRAM, tamanho de lote e largura da rede precisam caber; se faltar memória,
   reduzir `model.batch_size` (e registrar aqui) antes de mexer na arquitetura.
 - **Impacto no TC:** Seção 4.5 — hardware de treino (GPU, VRAM, TF 2.20, CUDA 12.5, cuDNN 9.3).
