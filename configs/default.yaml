@@ -60,7 +60,8 @@ features:
 model:
   context_beats: 5           # i-3 … i+1 (1 batimento futuro) — D-08
   future_beats: 1
-  rr_features: ["rr_pre", "rr_post", "rr_local", "rr_pre_ratio", "rr_post_ratio"]
+  rr_features: ["rr_pre", "rr_post", "rr_local", "rr_pre_ratio", "rr_post_ratio",
+                "rr_pre_long_ratio", "rr_post_long_ratio", "rr_local_long_ratio"]  # D-19
   beat_channels: ["beats"]   # + "beat_diff": batimento menos o habitual do paciente (D-20)
   augment_noise_std: 0.0     # ruído gaussiano por amostra (unidades do escore z), só no treino
   augment_baseline_std: 0.0  # deslocamento + rampa linear aleatórios por batimento, só no treino
@@ -74,7 +75,7 @@ model:
   batch_size: 256
   max_epochs: 60
   patience: 8
-  loss: weighted_ce          # weighted_ce | focal
+  loss: focal                # weighted_ce | focal; empate no DS1-val (D-21)
   focal_gamma: 2.0
   class_weight_cap: 50.0     # focal usa os mesmos pesos como alfa: só γ difere da CE ponderada (D-18)
 

@@ -167,6 +167,54 @@ Toda mudança de parâmetro ou desvio do PLANO entra aqui com data.
   V mais largos que N. Ajuste feito só em DS1.
 - **Impacto no TC:** Seção 4.5 — uma frase com o método e o limiar.
 
+### D-18 — Treino: perdas, early stopping e normalização das RR · `aceita` (14/10)
+- **Perdas:** `weighted_ce` = entropia cruzada com pesos n / (C · n_c), teto `model.class_weight_cap` = 50 (Q, com 6
+  batimentos no treino, fica no teto). `focal` = mesma perda com o fator (1 − p)^γ, γ = 2, e **os mesmos pesos como
+  α**. Com γ = 0 as duas são idênticas, então a comparação isola o efeito de γ.
+- **Early stopping:** macro-F1 sobre N, S, V, F (`evaluation.macro_classes`) no DS1-val ao fim de cada época;
+  paciência 8; restaura os pesos da melhor época. Q fica fora (2 batimentos no val, D-11/D-15).
+- **RR:** camada `Normalization` com média e variância do DS1-train, salva dentro do `model.keras` (sem estado
+  externo). As RR entram no modelo pelas colunas de `model.rr_features`; o `.npz` guarda todas.
+- **Seeds:** `keras.utils.set_random_seed(seed)`. Na GPU o treino não é bit a bit determinístico (cuDNN); por isso as
+  comparações usam 2–3 seeds. A inferência é determinística e portátil: a matriz de confusão do DS1-val na CPU do
+  Windows é idêntica à do treino na GPU do Linux.
+- **Execução:** GTX 1050 Ti, ~20 s por época, 4–7 min por treino (registrado em cada `run.json`).
+
+### D-19 — RR relativo ao ritmo habitual do paciente · `aceita` (14/10)
+- **Contexto:** o primeiro treino (5 features RR do ARQUITETURA §3) tinha Se de S ≈ 0,04 no DS1-val. Diagnóstico por
+  registro: 105 dos 142 S do val estão numa corrida de taquicardia supraventricular no 207. Dentro da corrida,
+  RR pré / RR local ≈ 0,99: o batimento não é prematuro em relação aos vizinhos, só em relação ao ritmo habitual.
+- **Decisão:** 3 features novas, RR pré, pós e local divididos pela média causal dos últimos
+  `features.long_rr_beats` = 300 intervalos (~5 min). No 207, S tem RR pré / RR longo = 0,40 contra 1,02 nos N.
+  É a mesma ideia de personalização do perfil (comparar o paciente com ele mesmo) aplicada à entrada do modelo, e
+  funciona em streaming (só usa batimentos anteriores). `model.rr_features` passa a ter as 8 colunas.
+- **Resultado (DS1-val, focal, média ± dp de 2 seeds):** macro-F1 0,469 ± 0,003 → **0,605 ± 0,016**; Se de S
+  0,04 → 0,77. Runs: `20261014-151610_train_focal`, `…153038_train_focal_s43_e0_base`,
+  `…153500_train_focal_s42_e1_long_rr`, `…154129_train_focal_s43_e1_long_rr`.
+- **Impacto no TC:** Seção 4.5 — descrever as 8 features RR. Pode ser citado como evidência a favor da
+  personalização (Seção 4.6, discussão), deixando claro que é medido no DS1-val.
+
+### D-20 — Experimentos descartados: aumento de dados e diferença para o batimento habitual · `aceita` (14/10)
+- **E2 — aumento de dados** (`augment_noise_std` = 0,05, `augment_baseline_std` = 0,1, só no treino): 0,613 ± 0,008
+  contra 0,605 ± 0,016 do E1, dentro do ruído; uma seed parou na época 4. Não adotado (mantido desligado na config).
+- **E3 — canal `beat_diff`** (batimento menos a mediana causal dos 50 anteriores, `segment.template_beats`): a feature
+  separa V de N isoladamente (RMS mediano 0,65 × 0,08 no 207), mas o modelo piorou: 0,560 ± 0,025, melhor época 3,
+  S caiu. Não adotado; o canal continua no `.npz` e em `model.beat_channels` para quem quiser repetir.
+- **Cuidado com o val:** só 5 configurações foram comparadas, todas por hipóteses tiradas do diagnóstico do DS1-val,
+  para limitar o sobreajuste ao val. Runs com tag `e2_long_rr_aug` e `e3_long_rr_template`.
+- **Impacto no TC:** opcional — uma frase sobre o que foi testado e não ajudou.
+
+### D-21 — Escolha da perda e do modelo final, antes de qualquer avaliação em DS2 · `aceita` (14/10)
+- **Comparação (E1, 3 seeds cada, DS1-val, macro-F1 N, S, V, F):** focal **0,6021 ± 0,0126**
+  (0,5934 / 0,6165 / 0,5963) × weighted_ce **0,6020 ± 0,0099** (0,5987 / 0,5941 / 0,6132). Empate: a diferença é
+  muito menor que a variação entre seeds.
+- **Decisão:** aplicar o critério fixado no PLANO (maior macro-F1 médio no DS1-val) → **focal**, declarando o
+  empate. Modelo final = seed de maior macro-F1 no val: **`20261014-154129_train_focal_s43_e1_long_rr`**
+  (0,6165; melhor época 14). `model.loss` e `model.rr_features` da config padrão passam a refletir essa escolha.
+- **DS2:** avaliar o modelo final; avaliar também as outras 2 seeds do focal só para reportar a variação entre
+  seeds (média ± dp), sem nova escolha. Nenhum ajuste depois de ver DS2.
+- **Impacto no TC:** Seção 4.5 — "as duas perdas tiveram desempenho equivalente na validação; adotou-se a focal".
+
 ---
 
 ## Resolvidas
