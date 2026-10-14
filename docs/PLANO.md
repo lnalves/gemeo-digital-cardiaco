@@ -32,20 +32,20 @@ Marque `[x]` ao concluir. Cada fase termina com testes verdes e um "Resumo para 
 
 ## F1 — Dados e sinal
 
-- [ ] `data/labels.py` — mapa AAMI; símbolos de não-batimento (`+ ~ | " x [ ] ! ...`) ignorados.
-- [ ] `data/splits.py` — DS1, DS2, PACED; `assert` disjunção; `select_val_records(ds1, seed)` garante S e V em DS1-val.
-- [ ] `data/mitbih.py` — `load_record(id) -> (signal_mlii, fs, r_samples, symbols)`.
-- [ ] `signal/filters.py` — `CausalBandpass` com `process(chunk)` (estado) e `process_full(x)`.
-- [ ] `signal/segmentation.py` — recorte [R-90, R+166], z-score, descarte de bordas; montagem de contexto K.
-- [ ] `signal/features.py` — RR (pré, pós, local, razões), largura QRS, amplitude R.
-- [ ] `signal/rpeaks.py` — `StreamingRPeakDetector` + `match_peaks(det, ann, tol=150ms)`.
-- [ ] `scripts/build_dataset.py` — gera `data/processed/ds1.npz` e `ds2.npz` (beats, rr_feats, labels, record_id,
+- [x] `data/labels.py` — mapa AAMI; símbolos de não-batimento (`+ ~ | " x [ ] ! ...`) ignorados.
+- [x] `data/splits.py` — DS1, DS2, PACED; `assert` disjunção; `select_val_records(ds1, seed)` garante S, V e F em DS1-val (D-15).
+- [x] `data/mitbih.py` — `load_record(id) -> (signal_mlii, fs, r_samples, symbols)`.
+- [x] `signal/filters.py` — `CausalBandpass` com `process(chunk)` (estado) e `process_full(x)`.
+- [x] `signal/segmentation.py` — recorte [R-90, R+166], z-score, descarte de bordas; montagem de contexto K.
+- [x] `signal/features.py` — RR (pré, pós, local, razões), largura QRS, amplitude R.
+- [x] `signal/rpeaks.py` — `StreamingRPeakDetector` + `match_peaks(det, ann, tol=150ms)` + refino do R (D-16).
+- [x] `scripts/build_dataset.py` — gera `data/processed/ds1.npz` e `ds2.npz` (beats, rr_feats, labels, record_id,
       r_sample) + `stats.json` com contagem por classe e registro.
 - [ ] Notebook `notebooks/01_eda.ipynb` (opcional): distribuição de classes, exemplos de batimentos por classe,
       histogramas das 3 features em 2–3 pacientes (vira figura do TC).
 
 **Testes:** mapa AAMI; DS1∩DS2=∅ e PACED fora; filtro em blocos ≡ filtro inteiro (tolerância 1e-9); detector com
-sensibilidade > 99 % e VPP > 99 % em 3 registros limpos (ex.: 100, 103, 113); largura QRS mediana em 60–200 ms em
+sensibilidade > 99 % e VPP > 99 % em 3 registros limpos de DS1 (112, 115, 122 — D-16); largura QRS mediana em 60–200 ms em
 ≥ 90 % dos registros; contagens por classe batem com a literatura (DS1 ≈ 51 mil, DS2 ≈ 49,7 mil batimentos).
 
 **Resumo para o TC:** contagem de batimentos por classe em DS1/DS2 (tabela), parâmetros do filtro, janela do

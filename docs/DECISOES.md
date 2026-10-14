@@ -23,13 +23,13 @@ Toda mudança de parâmetro ou desvio do PLANO entra aqui com data.
 - **Decisão:** Butterworth SOS causal com estado em ambos. Teste: blocos ≡ sinal inteiro.
 - **Impacto no TC:** Seção 3.5/4.5 — "filtro passa-faixa causal, aplicado de forma idêntica no treinamento e na execução".
 
-### D-03 — Picos R: anotados no treino, detector na execução · `proposta`
+### D-03 — Picos R: anotados no treino, detector na execução · `aceita` (14/10, ver D-16)
 - **Contexto:** o módulo de pré-processamento "localiza os picos R" (4.1), mas o treino usa as anotações (3.5).
 - **Decisão:** `engine.rpeak_source = detector` como alvo, com casamento ±150 ms (EC57) na avaliação.
   `annotation` disponível como modo de referência e como plano B se o detector não ficar pronto até 22/10.
 - **Impacto no TC:** citar o detector e a tolerância de 150 ms na Seção 4.5; se usar plano B, declarar como limitação.
 
-### D-04 — Largura do QRS exige delineação · `proposta`
+### D-04 — Largura do QRS exige delineação · `aceita` (14/10, ver D-17)
 - **Contexto:** a MIT-BIH anota só o pico R; não há onset/offset do QRS.
 - **Decisão:** método simples por limiar da derivada em torno do R (parâmetros no config), validado por faixa
   plausível. Alternativa se falhar: `neurokit2.ecg_delineate` offline para validar o método simples.
@@ -61,6 +61,8 @@ Toda mudança de parâmetro ou desvio do PLANO entra aqui com data.
 - **Contexto:** o texto diz "sequência de batimentos consecutivos" e atraso de ~1 RR.
 - **Decisão:** K = 5 (`i-3 … i+1`), CNN por batimento (TimeDistributed) + features RR, BiLSTM sobre os K
   batimentos, atenção sobre os K. Pesos de atenção = destaque por batimento no painel.
+- **F1 (14/10):** `segmentation.context_indices` só gera sequências completas dentro de um registro → os 3 primeiros
+  e o último batimento de cada registro não são classificados (~88 de ~50 mil em DS2). Confirmar na F2.
 - **Impacto no TC:** detalhar na Seção 4.5 com figura da rede.
 
 ### D-09 — Ajuste de k e janela em DS1-val · `proposta`
@@ -123,6 +125,47 @@ Toda mudança de parâmetro ou desvio do PLANO entra aqui com data.
 - **Consequência para F2:** com 4 GB de VRAM, tamanho de lote e largura da rede precisam caber; se faltar memória,
   reduzir `model.batch_size` (e registrar aqui) antes de mexer na arquitetura.
 - **Impacto no TC:** Seção 4.5 — hardware de treino (GPU, VRAM, TF 2.20, CUDA 12.5, cuDNN 9.3).
+
+### D-15 — Escolha do DS1-val por restrições + sorteio · `aceita` (14/10)
+- **Contexto:** as arritmias de DS1 estão concentradas: o 208 tem 373 dos 415 F; o 209 tem 383 dos 944 S. Um sorteio
+  cego de 4 registros pode tirar quase todo o F do treino ou deixar o val sem S/V (early stopping por macro-F1 inútil).
+- **Decisão:** `select_val_records` enumera as C(22,4) combinações de DS1, mantém as que têm **S ≥ 100, V ≥ 200,
+  F ≥ 10** (`data.val_min_beats`) e **no máximo 35 % do S, V e F de DS1** (`data.val_max_fraction`), e sorteia uma com
+  `seed` = 42. A primeira versão (sem mínimo de F) deu 1 único F no val → F1 da classe F seria 0 ou 1; acrescentado
+  F ≥ 10. Só lê anotações de DS1 (`scripts/select_val_records.py`).
+- **Resultado (fixado em `data.val_records`):** **101, 124, 205, 207** → val N = 7510, S = 144, V = 328, F = 16, Q = 2;
+  treino (18 registros) fica com 85 % do S, 91 % do V e 96 % do F de DS1.
+- **Consequência para F2:** Q tem só 2 batimentos no val → o early stopping deve usar macro-F1 sobre N, S, V, F (D-11).
+- **Impacto no TC:** Seção 4.5 — uma frase sobre o critério de escolha do conjunto de validação.
+
+### D-16 — Detector de R: parâmetros e refino do R para alinhar treino e execução · `aceita` (14/10)
+- **Detector:** Pan-Tompkins simplificado e causal (derivada de 5 pontos → quadrado → integração de 150 ms; pico
+  candidato = máximo em ±200 ms; limiar adaptativo SPK/NPK; busca de volta após 1,66·RR médio; rejeição de onda T
+  em até 360 ms). Cada candidato só é decidido quando chegam 200 ms depois dele → saída idêntica para qualquer
+  divisão em blocos (testado com blocos de 1, 250, 360 e 2520 amostras e num registro real).
+- **Ajuste só em DS1:** grade `threshold_frac` ∈ {0,15; 0,2; 0,25} × `searchback_threshold_scale` ∈ {0,3; 0,5} ×
+  `twave_slope_frac` ∈ {0,3; 0,5}. Escolhidos 0,15 / 0,3 / 0,5 (maior Se + VPP). Com 0,25 / 0,5 o 208 tinha Se = 94 %
+  (V largos abaixo do limiar). **DS1 final: Se = 99,79 %, VPP = 99,11 %** (TP = 50 912, FP = 456, FN = 109); sem o
+  207 (flutter ventricular, ondas anotadas como não batimento), VPP = 99,79 %.
+- **Desvio do PLANO:** o teste de aceite (Se e VPP > 99 %) usa os registros limpos **112, 115, 122 (DS1)** em vez
+  de 100, 103, 113, que são DS2 — ajustar o detector até passar neles violaria o RNF02. O desempenho em DS2 sai
+  na avaliação da F4.
+- **Refino do R (`segment.r_refine_ms` = 50):** o filtro causal atrasa o pico ~4 amostras (11 ms) em relação à
+  anotação, feita no sinal bruto. Treinar com janelas na anotação e executar com janelas no pico detectado deslocaria
+  a morfologia vista pelo modelo. Regra única nos dois caminhos: R = máximo de |x| filtrado em ±50 ms da posição de
+  referência (anotação no treino, detector na execução). Em DS1, detector e anotação refinados coincidem na mesma
+  amostra em 98,7 % dos batimentos casados (99,1 % com |Δ| ≤ 2 amostras), contra 0,4 % sem refino.
+- **D-03:** passa a `aceita` com `engine.rpeak_source: detector`.
+- **Impacto no TC:** Seção 4.5 — detector, tolerância de 150 ms e refino do R; números de DS1 acima (DS2 na 4.6).
+
+### D-17 — Largura do QRS: limiar de inclinação 0,1 · `aceita` (14/10)
+- **Método (D-04):** em ±100 ms do R, limiar = `qrs_slope_frac` × max |Δx|; início/fim = primeira/última amostra com
+  inclinação acima dele.
+- **Mudança:** `qrs_slope_frac` 0,2 → **0,1**. Com 0,2, a mediana do QRS de batimentos N em DS1 ficava em 42–69 ms na
+  maioria dos registros (abaixo do fisiológico, ~80–100 ms) e só 55 % dos registros em 60–200 ms; com 0,1, 22/22
+  registros de DS1 ficam em 60–200 ms (mediana por registro), bloqueios de ramo em 119–147 ms (109, 118, 124, 207) e
+  V mais largos que N. Ajuste feito só em DS1.
+- **Impacto no TC:** Seção 4.5 — uma frase com o método e o limiar.
 
 ---
 

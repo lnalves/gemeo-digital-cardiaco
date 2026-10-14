@@ -32,10 +32,12 @@ Correspondência com Grieves (2014): entidade física = paciente (registro); rep
 ```
 src/cardiac_twin/
   config.py            # carrega YAML → dataclasses imutáveis (Config)
+  provenance.py        # hash do git (com -dirty) gravado nos artefatos
   data/
     mitbih.py          # download (wfdb.dl_database), leitura de registro (canal MLII), anotações
     labels.py          # mapa símbolo MIT-BIH → classe AAMI; símbolos de não-batimento ignorados
     splits.py          # DS1, DS2, PACED; split DS1 → DS1-train / DS1-val por REGISTRO
+    builder.py         # registro → batimentos + features (mesmas funções de signal/ usadas no streaming)
   signal/
     filters.py         # CausalBandpass (sos + estado zi), streaming e em lote com saída idêntica
     rpeaks.py          # StreamingRPeakDetector (Pan-Tompkins simplificado) + matching ±150 ms
@@ -79,14 +81,18 @@ tests/
 - **Exclusões:** registros com marca-passo `102, 104, 107, 217`.
 - **DS1 (treino):** 101 106 108 109 112 114 115 116 118 119 122 124 201 203 205 207 208 209 215 220 223 230
 - **DS2 (teste):** 100 103 105 111 113 117 121 123 200 202 210 212 213 214 219 221 222 228 231 232 233 234
-- **DS1-val:** subconjunto de registros de DS1 (`data.val_records`), escolhido por script para conter batimentos
-  S e V; usado para early stopping e para ajustar `k` e janela do perfil.
+- **DS1-val:** subconjunto de registros de DS1 (`data.val_records` = 101, 124, 205, 207), sorteado por
+  `scripts/select_val_records.py` entre as combinações com S, V e F suficientes sem tirar a maior parte de nenhuma
+  classe do treino (D-15); usado para early stopping e para ajustar `k` e janela do perfil.
 - **Mapa AAMI (EC57):** N = {N, L, R, e, j}; S = {A, a, J, S}; V = {V, E}; F = {F}; Q = {/, f, Q}.
 - **Filtro:** Butterworth passa-faixa `signal.bandpass_hz` (0,5–40 Hz), ordem `signal.filter_order`, forma SOS,
   aplicado causalmente com estado. Teste obrigatório: filtrar em blocos de 360 amostras ≡ filtrar o sinal inteiro.
 - **Picos R:** treino usa as posições anotadas. Execução usa `StreamingRPeakDetector` (configurável:
   `engine.rpeak_source: detector | annotation`). Na avaliação, batimentos detectados são casados com anotações
   em ±150 ms (EC57); não casados contam como detecções espúrias, anotações sem par como perdidas.
+  Nos dois caminhos o R é **refinado** para o máximo de |x| filtrado em ±`segment.r_refine_ms` (D-16): sem isso,
+  o atraso de fase do filtro causal deslocaria as janelas do treino (anotação) em relação às da execução (detector).
+  Parâmetros do detector em `rpeaks.*`.
 - **Batimento:** janela `[R - pre, R + post]` (`segment.pre_samples`=90, `post_samples`=166 → 256 amostras),
   normalização z-score por batimento.
 - **Features por batimento:**
