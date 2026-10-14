@@ -32,6 +32,8 @@ def main() -> None:
     a = summary["classifier_alone"]
     print(f"run: {out}")
     print(f"A (classificador isolado): FP={a['fp']}  Se S+V={a['sensitivity_sv']:.3f}")
+    if summary["choice"] is None:
+        print("nenhum ponto da grade respeita a queda máxima de sensibilidade")
     for row in table:
         mark = "*" if row is summary["choice"] else " "
         print(

@@ -59,7 +59,5 @@ def tune_profile(
             }
         )
     feasible = [row for row in table if row["feasible"]]
-    if not feasible:
-        raise RuntimeError("no grid point keeps the S+V alert sensitivity within the allowed drop")
-    best = min(feasible, key=lambda row: (row["fp_b"], -row["sensitivity_sv_b"]))
+    best = min(feasible, key=lambda row: (row["fp_b"], -row["sensitivity_sv_b"])) if feasible else None
     return {"choice": best, "classifier_alone": a}, table
