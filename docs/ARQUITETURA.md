@@ -138,7 +138,11 @@ saídas: probs (5), attention (K)
 - **Divergência:** `D = Σ_f D_KL(P_f ‖ Q_f)` (soma das marginais). Histograma conjunto 3D é inviável com 60–100
   batimentos por janela.
 - **Limiar:** subjanelas da calibração com o mesmo tamanho e passo da monitorização (`profile.window_seconds`,
-  `profile.step_seconds`) → valores de D → `L = μ + k·σ` (Eq. 11), `k = profile.k` ajustado em DS1-val.
+  `profile.step_seconds`) → valores de D → `L = μ + k·σ` (Eq. 11), `k = profile.k` ajustado em DS1-val. O D de cada
+  subjanela é medido contra o Q da calibração **sem** aquela subjanela (leave-one-out, D-23); o Q da monitorização usa
+  os 5 min inteiros.
+- **Monitor (`profile/monitor.py`):** `ProfileMonitor.add_beat(t, features)` e `advance(t_conhecido)`; constrói o perfil
+  ao passar de 300 s e pontua uma janela a cada `step_seconds`, a primeira terminando no fim da calibração (D-24).
 - **Atualização (Eq. 10):** `Q_f ← (1-α)·Q_f + α·P_f` só para alertas descartados; `α = profile.alpha`.
   Desligável por `engine.feedback_enabled`. Versão do perfil incrementa a cada atualização (persistida).
 

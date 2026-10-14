@@ -230,6 +230,39 @@ Toda mudança de parâmetro ou desvio do PLANO entra aqui com data.
 - **Inferência:** 0,50 ms por batimento na CPU do Windows (lote de 256), bem abaixo do orçamento do RNF01.
 - **Impacto no TC:** Seção 4.6 — tabela por classe, matriz de confusão e um parágrafo sobre N → F.
 
+### D-23 — μ e σ do limiar por leave-one-out nas subjanelas da calibração · `aceita` (14/10, A-04)
+- **Problema:** com D de cada subjanela medido contra o Q da calibração inteira, a própria subjanela já está em Q:
+  todo valor dela tem massa, e D sai baixo (μ ≈ 0,3–1,0 no DS1-val). Janelas novas trazem valores em bins vazios
+  da calibração (Q ≈ ε) e D sobe (mediana ≈ 3–4). Resultado no DS1-val, k = 2: 100 % das janelas só com N e 97 % das
+  com não-N acima de L — a configuração B quase não difere da A. A D-07 previa o viés, mas nenhum k da grade (1–3)
+  o compensa.
+- **Medido no DS1-val** (fração das janelas pós-calibração com D > L):
+
+  | ε | leave-one-out | k | só N | com não-N |
+  |---|---|---|---|---|
+  | 10⁻⁶ | não | 2 | 100 % | 97 % |
+  | 10⁻⁶ | **sim** | 2 | **18 %** | **36 %** |
+  | 0,5 | sim | 2 | 85 % | 74 % |
+  | 1 | sim | 2 | 86 % | 76 % |
+
+- **Decisão (aprovada pelo autor, A-04):** cada subjanela é comparada com um Q montado com a calibração **sem** ela
+  (leave-one-out). O Q usado na monitorização e os bins continuam vindo dos 5 min inteiros; ε, bins e a Eq. 11 não
+  mudam. Teste `test_stationary_signal_rarely_exceeds_threshold`: num sinal sintético estacionário, 74 % das
+  janelas passavam de L no método antigo e menos de 20 % no novo. ε maior (pseudocontagem) piora e não foi adotado.
+- **Impacto no TC:** Seção 4.4 — 1–2 frases: "para estimar a variação natural de D sem viés, cada subjanela da
+  calibração é comparada com o perfil construído sem ela".
+
+### D-24 — Calibração igual nas duas configurações; features do perfil · `aceita` (14/10)
+- Durante os 5 min de calibração só existe alerta crítico, **em A e em B**: as duas configurações ficam iguais nesse
+  trecho, que é excluído das métricas de qualquer forma (regra 6).
+- A primeira KL é calculada no fim da calibração (janela que termina em 300 s), para que os batimentos logo após a
+  calibração já tenham "KL atual". Batimento ≠ N sem KL disponível em B → atenção.
+- `profile.features` passa a usar os nomes de `signal.features.beat_features`: `rr_pre`, `qrs_width_ms`,
+  `r_amplitude`. σ das subjanelas com ddof = 1 (25 valores).
+- **`tune_profile.py` depois do pipeline:** para respeitar a regra 2, o ajuste de k e janela roda sobre o replay
+  do `StreamingPipeline` (F4) no DS1-val, não sobre uma simulação própria. Ordem: F3 (módulos) → F4 (pipeline e
+  replay) → `tune_profile.py` → avaliação em DS2.
+
 ---
 
 ## Resolvidas
@@ -238,6 +271,8 @@ Toda mudança de parâmetro ou desvio do PLANO entra aqui com data.
 - **A-02** (12/10) Treino em outra máquina com GPU → D-10.
 - **A-03** (12/10) Teste de Wilcoxon pareado (FP por registro, 22 pares, A × B) **entra na Seção 4.6**, com
   estatística, p-valor e α = 0,05. Hipótese unilateral: FP(B) < FP(A).
+- **A-04** (14/10) μ e σ do limiar por leave-one-out nas subjanelas da calibração → D-23.
+- **A-05** (14/10) Rodada de melhorias do classificador antes de tocar em DS2, só com DS1-val → D-19 a D-21.
 
 ## Em aberto
 
