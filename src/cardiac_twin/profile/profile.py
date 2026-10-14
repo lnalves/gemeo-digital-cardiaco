@@ -39,18 +39,23 @@ class PatientProfile:
     def build(
         cls, times: np.ndarray, features: Mapping[str, np.ndarray], cfg: ProfileConfig
     ) -> PatientProfile:
-        """Build Q_f from the calibration beats and μ, σ from the D of its subwindows."""
+        """Build Q_f from all calibration beats, and μ, σ from the D of its subwindows (D-23).
+
+        Each subwindow is scored against Q built from the calibration without that subwindow
+        (leave-one-out). Against the full Q its own beats always have mass, so D is too low and L
+        would sit below the D of new, unseen windows.
+        """
+        values = {f: np.asarray(features[f]) for f in cfg.features}
         calib = in_window(times, cfg.calibration_seconds, cfg.calibration_seconds)
-        edges = {
-            f: calibration_edges(np.asarray(features[f])[calib], cfg.n_bins, cfg.range_percentiles)
-            for f in cfg.features
-        }
-        q = {f: histogram(np.asarray(features[f])[calib], edges[f], cfg.eps) for f in cfg.features}
+        edges = {f: calibration_edges(v[calib], cfg.n_bins, cfg.range_percentiles) for f, v in values.items()}
+        q = {f: histogram(v[calib], edges[f], cfg.eps) for f, v in values.items()}
         base = cls(edges, q, mu=0.0, sigma=0.0, eps=cfg.eps, calibration_scores=())
         scores = []
         for end in window_ends(cfg):
             sub = in_window(times, end, cfg.window_seconds)
-            scores.append(base.score({f: np.asarray(features[f])[sub] for f in cfg.features}))
+            q_out = {f: histogram(v[calib & ~sub], edges[f], cfg.eps) for f, v in values.items()}
+            p_sub = base.distributions({f: v[sub] for f, v in values.items()})
+            scores.append(kl_sum(p_sub, q_out))
         s = np.array(scores)
         sigma = float(s.std(ddof=1)) if len(s) > 1 else 0.0
         return dataclasses.replace(base, mu=float(s.mean()), sigma=sigma, calibration_scores=tuple(scores))

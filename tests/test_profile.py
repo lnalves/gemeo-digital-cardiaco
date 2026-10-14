@@ -80,6 +80,14 @@ def test_build_threshold_and_score():
     assert prof.score(other) > prof.threshold(3.0) > prof.score(same)
 
 
+def test_stationary_signal_rarely_exceeds_threshold():
+    t, f = _beats(CFG.calibration_seconds + 600, seed=3)
+    m = ProfileMonitor(CFG)
+    scores = [s for u in _feed(m, t, f, 1.0) for s in u.scores]
+    above = np.mean([s.kl > s.threshold for s in scores])
+    assert above < 0.2
+
+
 def test_update_sums_to_one_and_lies_between_q_and_p():
     t, f = _beats(CFG.calibration_seconds)
     prof = PatientProfile.build(t, f, CFG)
