@@ -1,0 +1,5 @@
+# E3 (D-20): E1 + canal com o batimento menos o batimento habitual do paciente.
+model:
+  rr_features: ["rr_pre", "rr_post", "rr_local", "rr_pre_ratio", "rr_post_ratio",
+                "rr_pre_long_ratio", "rr_post_long_ratio", "rr_local_long_ratio"]
+  beat_channels: ["beats", "beat_diff"]

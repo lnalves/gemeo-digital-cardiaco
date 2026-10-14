@@ -82,7 +82,7 @@ def test_dataset_yields_center_labels():
     n = 12
     rng = np.random.default_rng(0)
     arrays = BeatArrays(
-        beats=rng.standard_normal((n, L)).astype(np.float32),
+        beats=rng.standard_normal((n, L, 1)).astype(np.float32),
         rr=rng.standard_normal((n, 5)).astype(np.float32),
         labels=np.arange(n, dtype=np.int8) % C,
         record_id=np.array(["a"] * n),
@@ -98,7 +98,7 @@ def test_augmentation_changes_beats_but_not_rr_or_labels():
     n = 12
     rng = np.random.default_rng(1)
     arrays = BeatArrays(
-        beats=rng.standard_normal((n, L)).astype(np.float32),
+        beats=rng.standard_normal((n, L, 1)).astype(np.float32),
         rr=rng.standard_normal((n, 5)).astype(np.float32),
         labels=np.arange(n, dtype=np.int8) % C,
         record_id=np.array(["a"] * n),

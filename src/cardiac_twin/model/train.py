@@ -107,7 +107,7 @@ def train(cfg: Config, processed_dir: Path, run_dir: Path, verbose: int = 2) -> 
     keras.utils.set_random_seed(cfg.seed)
     m, classes = cfg.model, cfg.data.classes
     splits = get_splits(cfg.data)
-    ds1 = load_beats(processed_dir / TRAIN_FILE, m.rr_features)
+    ds1 = load_beats(processed_dir / TRAIN_FILE, m.rr_features, m.beat_channels)
     train_a, val_a = ds1.select(splits.train), ds1.select(splits.val)
     train_c, train_s = _sequences(train_a, cfg)
     val_c, val_s = _sequences(val_a, cfg)

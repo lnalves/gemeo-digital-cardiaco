@@ -44,7 +44,7 @@ class AdditiveAttention(layers.Layer):
 def _beat_encoder(cfg: Config) -> keras.Sequential:
     m = cfg.model
     n = cfg.segment.pre_samples + cfg.segment.post_samples
-    blocks: list[layers.Layer] = [layers.Input((n, 1))]
+    blocks: list[layers.Layer] = [layers.Input((n, len(m.beat_channels)))]
     for i, (filters, kernel) in enumerate(zip(m.cnn_filters, m.cnn_kernels, strict=True)):
         blocks += [
             layers.Conv1D(filters, kernel, padding="same", use_bias=False),
@@ -57,14 +57,14 @@ def _beat_encoder(cfg: Config) -> keras.Sequential:
 
 
 def build_model(cfg: Config, rr_mean: np.ndarray, rr_variance: np.ndarray) -> keras.Model:
-    """Training model: inputs {beats (K, 256, 1), rr (K, 5)} → class probabilities.
+    """Training model: inputs {beats (K, 256, channels), rr (K, n_rr)} → class probabilities.
 
     `rr_mean`/`rr_variance` come from DS1-train and are stored in the model (no external state).
     """
     m = cfg.model
     k = m.context_beats
     n = cfg.segment.pre_samples + cfg.segment.post_samples
-    beats = layers.Input((k, n, 1), name="beats")
+    beats = layers.Input((k, n, len(m.beat_channels)), name="beats")
     rr = layers.Input((k, len(m.rr_features)), name="rr")
 
     z = layers.TimeDistributed(_beat_encoder(cfg), name="beat_encoder")(beats)

@@ -59,6 +59,7 @@ class RPeaksConfig:
 class SegmentConfig:
     pre_samples: int
     post_samples: int
+    template_beats: int
     r_refine_ms: float
     normalize: str
 
@@ -77,6 +78,7 @@ class ModelConfig:
     context_beats: int
     future_beats: int
     rr_features: tuple[str, ...]
+    beat_channels: tuple[str, ...]
     augment_noise_std: float
     augment_baseline_std: float
     cnn_filters: tuple[int, ...]

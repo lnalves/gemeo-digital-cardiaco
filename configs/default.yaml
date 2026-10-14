@@ -46,7 +46,8 @@ rpeaks:                      # Pan-Tompkins simplificado, causal (D-03, D-16)
 segment:
   pre_samples: 90            # 250 ms antes do R
   post_samples: 166          # ~461 ms depois do R → 256 amostras
-  r_refine_ms: 50            # R = extremo de |x| filtrado em ±50 ms, igual no treino e na execução (D-16)
+  template_beats: 50         # batimento habitual = mediana dos 50 anteriores (D-20)
+  r_refine_ms: 50           # R = extremo de |x| filtrado em ±50 ms, igual no treino e na execução (D-16)
   normalize: zscore
 
 features:
@@ -60,6 +61,7 @@ model:
   context_beats: 5           # i-3 … i+1 (1 batimento futuro) — D-08
   future_beats: 1
   rr_features: ["rr_pre", "rr_post", "rr_local", "rr_pre_ratio", "rr_post_ratio"]
+  beat_channels: ["beats"]   # + "beat_diff": batimento menos o habitual do paciente (D-20)
   augment_noise_std: 0.0     # ruído gaussiano por amostra (unidades do escore z), só no treino
   augment_baseline_std: 0.0  # deslocamento + rampa linear aleatórios por batimento, só no treino
   cnn_filters: [32, 64, 128]
