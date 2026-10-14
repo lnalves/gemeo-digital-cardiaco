@@ -2,7 +2,13 @@ import numpy as np
 import pytest
 
 from cardiac_twin.config import load_config
-from cardiac_twin.signal.features import qrs_width_ms, r_amplitude, rr_features
+from cardiac_twin.signal.features import (
+    RR_FEATURE_NAMES,
+    qrs_width_ms,
+    r_amplitude,
+    rr_columns,
+    rr_features,
+)
 from cardiac_twin.signal.segmentation import (
     context_indices,
     extract_beats,
@@ -48,20 +54,38 @@ def test_context_indices_one_future_beat():
 
 def test_rr_features():
     r = np.array([0, 360, 720, 1260, 1620])  # RR = 1.0, 1.0, 1.5, 1.0 s
-    f = rr_features(r, FS, local_beats=2)
+    f = rr_features(r, FS, local_beats=2, long_beats=3)
+    assert f.shape == (5, len(RR_FEATURE_NAMES))
     assert np.isnan(f[0, 0]) and np.isnan(f[-1, 1])
-    np.testing.assert_allclose(f[3], [1.5, 1.0, 1.25, 1.2, 0.8])
-    np.testing.assert_allclose(f[1, 2], 1.0)  # fewer than local_beats intervals available
-    np.testing.assert_allclose(f[4, 2], 1.25)  # mean of the last 2 intervals (1.5, 1.0)
+    long = 3.5 / 3
+    np.testing.assert_allclose(f[3], [1.5, 1.0, 1.25, 1.2, 0.8, 1.5 / long, 1.0 / long, 1.25 / long])
+    np.testing.assert_allclose(f[1, 2], 1.0)
+    np.testing.assert_allclose(f[4, 2], 1.25)
 
 
-def test_rr_features_are_causal_in_local_mean():
+def test_long_ratio_sees_a_fast_run_that_the_local_ratio_misses():
+    rr = np.r_[np.full(300, 1.0), np.full(20, 0.5)]
+    r = np.round(np.r_[0, np.cumsum(rr)] * FS).astype(int)
+    f = rr_features(r, FS, local_beats=10, long_beats=300)
+    last = f[-2]
+    assert last[3] == pytest.approx(1.0, abs=0.01)
+    assert last[5] < 0.6
+
+
+def test_rr_features_are_causal():
     r = np.array([0, 360, 720, 1080, 1440])
-    a = rr_features(r, FS, local_beats=10)
+    a = rr_features(r, FS, local_beats=10, long_beats=300)
     r2 = r.copy()
-    r2[-1] = 1800  # changes only rr_post of beat 3 and rr_pre of beat 4
-    b = rr_features(r2, FS, local_beats=10)
-    np.testing.assert_array_equal(a[:4, [0, 2, 3]], b[:4, [0, 2, 3]])
+    r2[-1] = 1800
+    b = rr_features(r2, FS, local_beats=10, long_beats=300)
+    pre_based = [0, 2, 3, 5, 7]
+    np.testing.assert_array_equal(a[:4, pre_based], b[:4, pre_based])
+
+
+def test_rr_columns():
+    assert rr_columns(["rr_pre", "rr_local_long_ratio"]) == [0, 7]
+    with pytest.raises(ValueError):
+        rr_columns(["rr_typo"])
 
 
 def _triangle_beats(width_ms: float, n: int = 5, rr: int = FS) -> tuple[np.ndarray, np.ndarray]:

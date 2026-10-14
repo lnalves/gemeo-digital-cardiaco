@@ -7,6 +7,7 @@ from cardiac_twin.config import ROOT, load_config
 from cardiac_twin.data.builder import build_split, process_record
 from cardiac_twin.data.mitbih import load_record
 from cardiac_twin.data.splits import get_splits
+from cardiac_twin.signal.features import RR_FEATURE_NAMES
 
 CFG = load_config()
 RAW = ROOT / CFG.data.raw_dir
@@ -48,7 +49,7 @@ def test_arrays_are_consistent(built):
     seg = CFG.segment
     assert arrays["beats"].shape == (n, seg.pre_samples + seg.post_samples)
     assert arrays["beats"].dtype == np.float32
-    assert arrays["rr_feats"].shape == (n, 5)
+    assert arrays["rr_feats"].shape == (n, len(RR_FEATURE_NAMES))
     assert not np.isnan(arrays["rr_feats"]).any()
     assert set(np.unique(arrays["labels"])) <= set(range(len(CFG.data.classes)))
     assert set(arrays["record_id"]) == set(SPLITS.ds1)

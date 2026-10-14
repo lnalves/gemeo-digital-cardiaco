@@ -2,11 +2,30 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 import numpy as np
 
 from cardiac_twin.config import Config
 
-RR_FEATURE_NAMES = ("rr_pre", "rr_post", "rr_local", "rr_pre_ratio", "rr_post_ratio")
+RR_FEATURE_NAMES = (
+    "rr_pre",
+    "rr_post",
+    "rr_local",
+    "rr_pre_ratio",
+    "rr_post_ratio",
+    "rr_pre_long_ratio",
+    "rr_post_long_ratio",
+    "rr_local_long_ratio",
+)
+
+
+def rr_columns(names: Sequence[str]) -> list[int]:
+    """Column indices of the named RR features (the model uses the subset `model.rr_features`)."""
+    unknown = set(names) - set(RR_FEATURE_NAMES)
+    if unknown:
+        raise ValueError(f"unknown RR features: {sorted(unknown)}")
+    return [RR_FEATURE_NAMES.index(n) for n in names]
 
 
 def beat_features(x: np.ndarray, r_samples: np.ndarray, cfg: Config) -> dict[str, np.ndarray]:
@@ -16,7 +35,7 @@ def beat_features(x: np.ndarray, r_samples: np.ndarray, cfg: Config) -> dict[str
     `rr` feeds the classifier; `rr_pre`, `qrs_width_ms` and `r_amplitude` feed the profile.
     """
     fs, f, s = cfg.data.fs, cfg.features, cfg.segment
-    rr = rr_features(r_samples, fs, f.local_rr_beats)
+    rr = rr_features(r_samples, fs, f.local_rr_beats, f.long_rr_beats)
     return {
         "rr": rr,
         "rr_pre": rr[:, 0],
@@ -25,27 +44,39 @@ def beat_features(x: np.ndarray, r_samples: np.ndarray, cfg: Config) -> dict[str
     }
 
 
-def rr_features(r_samples: np.ndarray, fs: float, local_beats: int) -> np.ndarray:
-    """Return (n, 5) RR features in seconds: pre, post, local mean, pre/local, post/local.
+def rr_features(r_samples: np.ndarray, fs: float, local_beats: int, long_beats: int) -> np.ndarray:
+    """Return the RR features of `RR_FEATURE_NAMES`, in seconds or as ratios.
 
-    `rr_local` is the mean of the last `local_beats` intervals up to and including `rr_pre`
-    (causal; fewer at the start of the record). Undefined values (first/last beat) are NaN.
+    `rr_local` and the long mean are causal means of the last `local_beats` / `long_beats`
+    intervals up to and including `rr_pre` (fewer at the start of the record). The long mean is
+    the patient's usual rhythm: a run of fast beats is short against it, not against its
+    neighbours (D-19). Undefined values (first/last beat) are NaN.
     """
     r = np.asarray(r_samples, dtype=np.float64)
     n = len(r)
     out = np.full((n, len(RR_FEATURE_NAMES)), np.nan)
     if n < 2:
         return out
-    d = np.diff(r) / fs  # d[j] = interval between beats j and j+1
+    d = np.diff(r) / fs
     out[1:, 0] = d
     out[:-1, 1] = d
-    csum = np.concatenate([[0.0], np.cumsum(d)])
-    i = np.arange(1, n)  # beats with rr_pre = d[i-1]
-    start = np.maximum(0, i - local_beats)
-    out[1:, 2] = (csum[i] - csum[start]) / (i - start)
+    out[1:, 2] = _causal_mean(d, local_beats)
+    long = np.full(n, np.nan)
+    long[1:] = _causal_mean(d, long_beats)
     out[:, 3] = out[:, 0] / out[:, 2]
     out[:, 4] = out[:, 1] / out[:, 2]
+    out[:, 5] = out[:, 0] / long
+    out[:, 6] = out[:, 1] / long
+    out[:, 7] = out[:, 2] / long
     return out
+
+
+def _causal_mean(d: np.ndarray, window: int) -> np.ndarray:
+    """Element j: mean of d[max(0, j + 1 - window) : j + 1]."""
+    csum = np.concatenate([[0.0], np.cumsum(d)])
+    end = np.arange(1, len(d) + 1)
+    start = np.maximum(0, end - window)
+    return (csum[end] - csum[start]) / (end - start)
 
 
 def qrs_width_ms(
