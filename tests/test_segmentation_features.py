@@ -13,6 +13,7 @@ from cardiac_twin.signal.segmentation import (
     context_indices,
     extract_beats,
     normalize,
+    template_difference,
     valid_windows,
     zscore,
 )
@@ -117,3 +118,17 @@ def test_r_amplitude_relative_to_baseline():
     x, r = _triangle_beats(80)
     amp = r_amplitude(x + 0.7, r, PRE, POST)
     np.testing.assert_allclose(amp, 1.0)
+
+
+def test_template_difference_is_causal_and_ignores_isolated_ectopics():
+    normal = np.sin(np.linspace(0, np.pi, 256))
+    beats = np.tile(normal, (8, 1))
+    beats[5] = -normal
+    diff = template_difference(beats, window=4)
+    np.testing.assert_array_equal(diff[0], 0)
+    np.testing.assert_allclose(diff[4], 0, atol=1e-12)
+    np.testing.assert_allclose(diff[5], -2 * normal)
+    np.testing.assert_allclose(diff[6], 0, atol=1e-12)
+    later = beats.copy()
+    later[7] = 5.0
+    np.testing.assert_array_equal(template_difference(later, 4)[:7], diff[:7])

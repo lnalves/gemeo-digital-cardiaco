@@ -14,7 +14,13 @@ from cardiac_twin.data.labels import beat_annotations
 from cardiac_twin.data.mitbih import Record, load_record
 from cardiac_twin.signal.features import beat_features
 from cardiac_twin.signal.filters import CausalBandpass
-from cardiac_twin.signal.segmentation import extract_beats, normalize, refine_r, valid_windows
+from cardiac_twin.signal.segmentation import (
+    extract_beats,
+    normalize,
+    refine_r,
+    template_difference,
+    valid_windows,
+)
 
 
 def process_record(rec: Record, cfg: Config) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
@@ -36,6 +42,7 @@ def process_record(rec: Record, cfg: Config) -> tuple[dict[str, np.ndarray], dic
 
     out = {
         "beats": beats.astype(np.float32),
+        "beat_diff": template_difference(beats, s.template_beats).astype(np.float32),
         "rr_feats": feats["rr"][keep].astype(np.float32),
         "qrs_width_ms": feats["qrs_width_ms"][keep].astype(np.float32),
         "r_amplitude": feats["r_amplitude"][keep].astype(np.float32),

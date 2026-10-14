@@ -49,6 +49,7 @@ def test_arrays_are_consistent(built):
     seg = CFG.segment
     assert arrays["beats"].shape == (n, seg.pre_samples + seg.post_samples)
     assert arrays["beats"].dtype == np.float32
+    assert arrays["beat_diff"].shape == arrays["beats"].shape
     assert arrays["rr_feats"].shape == (n, len(RR_FEATURE_NAMES))
     assert not np.isnan(arrays["rr_feats"]).any()
     assert set(np.unique(arrays["labels"])) <= set(range(len(CFG.data.classes)))

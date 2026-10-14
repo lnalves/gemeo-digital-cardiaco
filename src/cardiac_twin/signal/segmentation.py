@@ -48,6 +48,19 @@ def normalize(beats: np.ndarray, method: str) -> np.ndarray:
     raise ValueError(f"unknown normalization {method!r}")
 
 
+def template_difference(beats: np.ndarray, window: int) -> np.ndarray:
+    """Each beat minus the median of the `window` previous beats of the same record (D-20).
+
+    The median is the patient's usual beat, robust to isolated ectopic beats. Causal: beat i uses
+    beats [i - window, i). The first beat has no template and gets zeros.
+    """
+    beats = np.asarray(beats, dtype=np.float64)
+    out = np.zeros_like(beats)
+    for i in range(1, len(beats)):
+        out[i] = beats[i] - np.median(beats[max(0, i - window) : i], axis=0)
+    return out
+
+
 def context_indices(n_beats: int, context: int, future: int) -> tuple[np.ndarray, np.ndarray]:
     """Beat indices of each K-beat sequence [i - (K-1-future), ..., i, ..., i + future].
 
