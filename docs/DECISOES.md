@@ -215,6 +215,21 @@ Toda mudança de parâmetro ou desvio do PLANO entra aqui com data.
   seeds (média ± dp), sem nova escolha. Nenhum ajuste depois de ver DS2.
 - **Impacto no TC:** Seção 4.5 — "as duas perdas tiveram desempenho equivalente na validação; adotou-se a focal".
 
+### D-22 — Resultado em DS2 e principal confusão (N → F) · `aceita` (14/10)
+- **Modelo final em DS2** (run `20261014-163721_eval_classifier_focal`): acurácia 0,780; Se/+P — N 0,777/0,981,
+  S 0,581/0,456, V 0,926/0,804, F 0,912/0,041; macro-F1 (N, S, V, F) 0,579. Três seeds: acurácia 0,804 ± 0,057,
+  macro-F1 0,586 ± 0,010.
+- **Achado:** 8 100 batimentos N (18,4 %) são classificados como F, concentrados em 213 (2 407), 233 (1 866) e
+  212 (1 172). No DS1-val só 0,5 % dos N iam para F: nenhum registro do val tem esse padrão. A acurácia fica abaixo
+  da faixa de referência (0,90–0,95) por causa disso; S e V estão na faixa ou acima do que a literatura
+  interpaciente reporta. Não é sinal de vazamento (o resultado é pior, não melhor, que a referência).
+- **Decisão:** nenhum ajuste depois de ver DS2 (D-21). O excesso de alarmes do classificador isolado é registrado
+  como limitação e é exatamente o que a configuração B (perfil) deve reduzir na F4.
+- **D-08:** confirmado — 88 batimentos de DS2 (3 primeiros e último de cada registro) ficam sem contexto e não são
+  avaliados (49 580 de 49 668).
+- **Inferência:** 0,50 ms por batimento na CPU do Windows (lote de 256), bem abaixo do orçamento do RNF01.
+- **Impacto no TC:** Seção 4.6 — tabela por classe, matriz de confusão e um parágrafo sobre N → F.
+
 ---
 
 ## Resolvidas

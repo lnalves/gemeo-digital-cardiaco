@@ -53,16 +53,16 @@ batimento, método de largura do QRS.
 
 ## F2 — Classificador
 
-- [ ] `model/architecture.py` — conforme ARQUITETURA §4; `build_model(cfg)` e `build_inference_model` (expõe atenção).
-- [ ] `model/losses.py` — focal loss; pesos de classe com teto `model.class_weight_cap`.
-- [ ] `model/dataset.py` — `tf.data` com sequências K; embaralhamento só no treino.
-- [ ] `model/train.py` + `scripts/train.py --loss {weighted_ce,focal}` — early stopping por macro-F1 em DS1-val;
+- [x] `model/architecture.py` — conforme ARQUITETURA §4; `build_model(cfg)` e `build_inference_model` (expõe atenção).
+- [x] `model/losses.py` — focal loss; pesos de classe com teto `model.class_weight_cap`.
+- [x] `model/dataset.py` — `tf.data` com sequências K; embaralhamento só no treino.
+- [x] `model/train.py` + `scripts/train.py --loss {weighted_ce,focal}` — early stopping por macro-F1 em DS1-val;
       salva `model.keras`, `history.json`, `config.yaml`, `git_hash`.
-- [ ] `model/inference.py` — `BeatClassifier.predict(beats, rr) -> (cls, prob, attention)`.
-- [ ] `evaluation/metrics.py` + `scripts/evaluate_classifier.py` — métricas Eq. 4–8 por classe, macro (5 e 4
+- [x] `model/inference.py` — `BeatClassifier.predict(beats, rr) -> (cls, prob, attention)`.
+- [x] `evaluation/metrics.py` + `scripts/evaluate_classifier.py` — métricas Eq. 4–8 por classe, macro (5 e 4
       classes), AUC OvR, matriz de confusão (PNG + CSV).
-- [ ] Treinar na máquina com GPU e trazer o run para o Mac (fluxo em D-10).
-- [ ] Rodar as duas perdas; escolher a de maior macro-F1 em **DS1-val** (não em DS2!) e registrar em DECISOES.
+- [x] Treinar na máquina com GPU e trazer o run para o Mac (fluxo em D-10). Runs em `artifacts/runs/` do Windows; portabilidade GPU→CPU conferida (D-18). Falta copiar para o Mac.
+- [x] Rodar as duas perdas; escolher a de maior macro-F1 em **DS1-val** (não em DS2!) e registrar em DECISOES. Empate; focal pelo critério (D-21).
 
 **Testes:** shapes de saída; atenção soma 1; um passo de treino reduz a perda em lote sintético; `BeatClassifier`
 determinístico.

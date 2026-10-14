@@ -96,7 +96,9 @@ tests/
 - **Batimento:** janela `[R - pre, R + post]` (`segment.pre_samples`=90, `post_samples`=166 → 256 amostras),
   normalização z-score por batimento.
 - **Features por batimento:**
-  - RR pré, RR pós, RR local médio (últimos `features.local_rr_beats`), razões pré/local e pós/local (entrada do modelo).
+  - RR pré, RR pós, RR local médio (últimos `features.local_rr_beats`), razões pré/local e pós/local, e RR pré,
+    pós e local divididos pela média causal dos últimos `features.long_rr_beats` = 300 intervalos (ritmo habitual
+    do paciente, D-19) → 8 colunas; o modelo usa as de `model.rr_features`.
   - Largura do QRS: onset/offset onde |derivada| do sinal filtrado cai abaixo de `features.qrs_slope_frac` × máx,
     busca em ±`features.qrs_search_ms`. Validar faixa plausível (60–200 ms) em amostra de registros.
   - Amplitude R: valor do sinal filtrado no pico menos a mediana da linha de base local.
@@ -112,7 +114,7 @@ beats  (K, 256, 1) ─▶ TimeDistributed(CNN encoder) ─▶ (K, 128)
                        Conv1D(32,7)-BN-ReLU-MaxPool
                        Conv1D(64,5)-BN-ReLU-MaxPool
                        Conv1D(128,3)-BN-ReLU-GlobalAvgPool
-rr     (K, 5)  ──────────────────────────────────────▶ concat ─▶ (K, 133)
+rr     (K, 8) ─ Normalization (média/var. do DS1-train) ▶ concat ─▶ (K, 136)
                                                        ─▶ BiLSTM(64, return_sequences) ─▶ (K, 128)
                                                        ─▶ atenção aditiva (Bahdanau) sobre K ─▶ contexto (128), α (K)
                                                        ─▶ Dense(64)-Dropout(0.3)-Dense(5, softmax)

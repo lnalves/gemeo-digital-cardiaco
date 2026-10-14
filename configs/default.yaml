@@ -111,7 +111,7 @@ server:
   host: 127.0.0.1
   port: 8000
   db_path: artifacts/cardiac_twin.sqlite
-  model_run: null            # caminho do run em artifacts/runs/ usado pelo servidor
+  model_run: artifacts/runs/20261014-154129_train_focal_s43_e1_long_rr  # modelo final (D-21)
   cors_origins: ["http://localhost:5173"]
 
 paths:
