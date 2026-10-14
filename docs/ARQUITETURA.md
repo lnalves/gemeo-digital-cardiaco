@@ -158,8 +158,8 @@ Implementa o Quadro 5. Para tornar o falso positivo mensurável **por batimento*
 | Atualização de janela (a cada 10 s) | sem batimentos ≠ N na janela e KL > L | **atenção** |
 | Atualização de janela | todos N e KL ≤ L | normal (só atualiza painel) |
 
-- "KL atual" = valor da janela de 60 s mais recente. Cada batimento é decidido **uma única vez**, evitando dupla
-  contagem por janelas sobrepostas.
+- "KL atual" = última janela (`profile.window_seconds` = 30 s, D-26) que termina até o instante do batimento (D-25).
+  Cada batimento é decidido **uma única vez**, evitando dupla contagem por janelas sobrepostas.
 - Durante a calibração: só alerta crítico (perfil inexistente).
 - **Configuração A (classificador isolado):** todo batimento ≠ N gera alerta (+ regra crítica). Mesmo pipeline,
   `engine.use_profile: false`.
@@ -180,6 +180,7 @@ class StreamingPipeline:
 
 Ciclo de `push`: filtro causal → detector de R → fila de batimentos pendentes → quando chega o batimento i+1,
 classifica i (lote) → features → decisão por batimento → a cada `step_seconds` recalcula KL → eventos.
+O batimento i+1 entra no modelo com o RR pós, que exige o batimento i+2: atraso algorítmico ≈ 2 RR (D-25).
 Cada evento carrega `recv_ts` do bloco que o originou e `emit_ts` → base da medição de latência.
 
 **Latência (ver D-01 em DECISOES.md):** reportar separadamente

@@ -75,13 +75,13 @@ matriz de confusão.
 
 ## F3 — Perfil e decisão
 
-- [ ] `profile/histogram.py` — bins por feature (p1–p99 + transbordo), `histogram(values, bins, eps)`.
-- [ ] `profile/kl.py` — `kl(p, q)`, `kl_sum(P, Q)`.
-- [ ] `profile/profile.py` — `PatientProfile.build(calib_features)`, `.threshold(k)`, `.score(window_features)`,
+- [x] `profile/histogram.py` — bins por feature (p1–p99 + transbordo), `histogram(values, bins, eps)`.
+- [x] `profile/kl.py` — `kl(p, q)`, `kl_sum(P, Q)`.
+- [x] `profile/profile.py` — `PatientProfile.build(calib_features)`, `.threshold(k)`, `.score(window_features)`,
       `.update(P, alpha)`, serialização JSON, `version`.
-- [ ] `decision/rules.py` — `decide_beat(cls, recent_v_run, kl, L, use_profile)`, `decide_window(has_non_n, kl, L)`,
+- [x] `decision/rules.py` — `decide_beat(cls, recent_v_run, kl, L, use_profile)`, `decide_window(has_non_n, kl, L)`,
       contador de V consecutivos.
-- [ ] `scripts/tune_profile.py` — grade de D-09 sobre DS1-val, usando o classificador de F2; salva tabela e escolha.
+- [x] `scripts/tune_profile.py` — grade de D-09 sobre DS1-val, usando o classificador de F2; salva tabela e escolha. Roda sobre o replay do pipeline (D-24); k = 1,5, janela 30 s (D-26).
 
 **Testes:** KL ≥ 0, KL(P,P)=0, finita com bins vazios; perfil atualizado soma 1 e fica entre Q e P; tabela-verdade
 completa do Quadro 5 (parametrizada); 3 V consecutivos → crítico mesmo com KL ≤ L e durante calibração; A ignora KL.
@@ -90,8 +90,8 @@ completa do Quadro 5 (parametrizada); 3 V consecutivos → crítico mesmo com KL
 
 ## F4 — Engine e avaliação do sistema  ← **números da Seção 4.6**
 
-- [ ] `engine/events.py` e `engine/pipeline.py` — conforme ARQUITETURA §7; estados calibrating → monitoring.
-- [ ] `evaluation/replay.py` — alimenta o pipeline em blocos de 1 s sem dormir; registra `recv_ts/emit_ts` e
+- [x] `engine/events.py` e `engine/pipeline.py` — conforme ARQUITETURA §7; estados calibrating → monitoring.
+- [x] `evaluation/replay.py` — alimenta o pipeline em blocos de 1 s sem dormir; registra `recv_ts/emit_ts` e
       rótulos verdadeiros (casamento ±150 ms).
 - [ ] `evaluation/compare.py` + `scripts/evaluate_system.py` — config A × B em todos os 22 registros DS2,
       feedback desligado, 5 min iniciais excluídos. Saídas: `per_record.csv`, `summary.json`, figuras

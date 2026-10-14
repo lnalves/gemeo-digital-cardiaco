@@ -65,7 +65,7 @@ Toda mudança de parâmetro ou desvio do PLANO entra aqui com data.
   e o último batimento de cada registro não são classificados (~88 de ~50 mil em DS2). Confirmar na F2.
 - **Impacto no TC:** detalhar na Seção 4.5 com figura da rede.
 
-### D-09 — Ajuste de k e janela em DS1-val · `proposta`
+### D-09 — Ajuste de k e janela em DS1-val · `aceita` (14/10, critério revisto em D-26)
 - **Contexto:** a Seção 4.4 diz que o ajuste usa só DS1. Registros usados para treinar os pesos dariam predições
   otimistas.
 - **Decisão:** usar os registros de **DS1-val** (fora do treino dos pesos). Grade: k ∈ {1; 1,5; 2; 2,5; 3},
@@ -263,6 +263,37 @@ Toda mudança de parâmetro ou desvio do PLANO entra aqui com data.
   do `StreamingPipeline` (F4) no DS1-val, não sobre uma simulação própria. Ordem: F3 (módulos) → F4 (pipeline e
   replay) → `tune_profile.py` → avaliação em DS2.
 
+### D-25 — StreamingPipeline: atraso de ~2 RR, "KL atual" e inferência compilada · `aceita` (14/10)
+- **Atraso algorítmico ≈ 2 RR:** o batimento futuro da sequência (i+1) entra no modelo com o próprio RR pós, que só
+  existe quando chega o batimento i+2. É o que o modelo viu no treino, então o streaming espera. No 205 (DS1-val),
+  atraso médio entre o pico R e o fim do bloco que permitiu classificá-lo: **2,15 s**. Reportar à parte (D-01).
+- **"KL atual" de um batimento** = última janela que termina **até o instante do batimento**, e não a última calculada
+  no momento da decisão. Calibrando = nenhuma janela até esse instante. Assim o resultado não depende do tamanho do
+  bloco (testado com blocos de 1 s, 7,04 s e sinal inteiro: mesmos batimentos, classes, níveis, KL e alertas).
+- **Mesmo código que o treino:** em modo `annotation`, as entradas que o pipeline entrega ao modelo (janelas e RR)
+  são iguais às do `ds1.npz` (tolerância de 1e-5) — teste `test_model_inputs_equal_the_training_dataset`.
+- **Janela com não-N:** a decisão da janela (Quadro 5) sai quando todos os batimentos dela já foram classificados.
+- **Episódios:** alerta a mais de `decision.episode_gap_s` do anterior abre episódio novo.
+- **Buffer:** `engine.signal_buffer_seconds` = 10 s de sinal filtrado, para recortar batimentos detectados com atraso.
+- **Inferência compilada (`tf.function`)** no `BeatClassifier`: replay de 30 min passou de 118 s para 4 s na CPU do
+  Windows, com resultados idênticos. Latência de processamento por bloco de 1 s no 205: p50 2,1 ms, p95 2,5 ms.
+- **Impacto no TC:** Seção 4.5 — atraso de ~2 RR (corrige a frase de "1 RR" da Seção 4.4); latência em 4.6.
+
+### D-26 — Critério de k e janela: queda de até 15 p.p. na sensibilidade S+V · `aceita` (14/10, A-06)
+- **Contexto:** no DS1-val, com o critério original da D-09 (queda ≤ 5 p.p.), nenhum ponto da grade k ∈ {1…3} ×
+  janela ∈ {30, 60, 90} s era viável (queda mínima 11,7 p.p.). Ampliando para k ∈ {−0,5; 0; 0,5}, o único viável útil
+  era k = 0 / 30 s, com FP só −4 %. O perfil troca FP por sensibilidade de forma contínua: um S ou V isolado entre
+  batimentos normais quase não muda o histograma da janela, a KL fica abaixo de L e o alerta vira atenção.
+- **Decisão (do autor, A-06):** limite de queda passa a **15 p.p.** (`profile.max_sensitivity_drop_pp`); grade
+  `k` ∈ {0; 0,5; 1; 1,5; 2; 2,5; 3} × janela ∈ {30, 60, 90} s. Critério: menor FP entre os pontos viáveis.
+- **Resultado (run `20261014-173844_tune_profile`, 4 registros do DS1-val, 1,67 h após a calibração, 350 S+V):**
+  A: FP = 181, Se S+V = 0,823. Escolha: **k = 1,5, janela = 30 s** → FP = 48 (−73 %), Se S+V = 0,683 (−14,0 p.p.).
+  A tabela completa (21 pontos) está em `tuning.csv` do run e é a curva de compromisso para o TC.
+- **D-09:** passa a `aceita` com este critério. Runs exploratórios do mesmo dia: `…173002_tune_profile` (grade
+  original) e `…173422_tune_profile` (k baixos).
+- **Impacto no TC:** Seção 4.5 — critério de escolha; Seção 4.6 — mostrar a curva FP × sensibilidade do DS1-val e o
+  ponto escolhido, e discutir que o ganho em FP tem custo em sensibilidade (parágrafo honesto pedido na F4).
+
 ---
 
 ## Resolvidas
@@ -273,6 +304,7 @@ Toda mudança de parâmetro ou desvio do PLANO entra aqui com data.
   estatística, p-valor e α = 0,05. Hipótese unilateral: FP(B) < FP(A).
 - **A-04** (14/10) μ e σ do limiar por leave-one-out nas subjanelas da calibração → D-23.
 - **A-05** (14/10) Rodada de melhorias do classificador antes de tocar em DS2, só com DS1-val → D-19 a D-21.
+- **A-06** (14/10) Queda máxima de sensibilidade S+V no ajuste de k passa de 5 para 15 p.p. → D-26.
 
 ## Em aberto
 
