@@ -13,8 +13,10 @@ data:
         "124", "201", "203", "205", "207", "208", "209", "215", "220", "223", "230"]
   ds2: ["100", "103", "105", "111", "113", "117", "121", "123", "200", "202", "210",
         "212", "213", "214", "219", "221", "222", "228", "231", "232", "233", "234"]
-  val_records: null          # preenchido por select_val_records() em F1 e então fixado aqui
+  val_records: ["101", "124", "205", "207"]    # scripts/select_val_records.py com seed 42 (D-15)
   n_val_records: 4
+  val_min_beats: {S: 100, V: 200, F: 10}         # DS1-val precisa de arritmias para o early stopping...
+  val_max_fraction: {S: 0.35, V: 0.35, F: 0.35}  # ... sem tirar a maior parte de uma classe do treino
   aami_map:
     N: ["N", "L", "R", "e", "j"]
     S: ["A", "a", "J", "S"]
@@ -28,15 +30,29 @@ signal:
   filter_order: 4            # Butterworth, forma SOS, aplicação causal (D-02)
   peak_match_tol_ms: 150     # ANSI/AAMI EC57
 
+rpeaks:                      # Pan-Tompkins simplificado, causal (D-03, D-16)
+  mwi_ms: 150                # janela de integração
+  refractory_ms: 200
+  learning_s: 2.0            # fase inicial que estima os limiares
+  threshold_frac: 0.15       # limiar = NPK + frac·(SPK − NPK); ajustado em DS1 (D-16)
+  peak_ema: 0.125            # peso do pico novo na média de SPK/NPK
+  rr_avg_beats: 8
+  searchback_rr_factor: 1.66 # sem QRS por 1,66·RR médio → busca de volta
+  searchback_threshold_scale: 0.3
+  searchback_peak_ema: 0.25
+  twave_ms: 360              # candidato tão perto do QRS anterior pode ser onda T...
+  twave_slope_frac: 0.5      # ... se a inclinação máxima for menor que esta fração da do QRS anterior
+
 segment:
   pre_samples: 90            # 250 ms antes do R
   post_samples: 166          # ~461 ms depois do R → 256 amostras
+  r_refine_ms: 50            # R = extremo de |x| filtrado em ±50 ms, igual no treino e na execução (D-16)
   normalize: zscore
 
 features:
   local_rr_beats: 10
   qrs_search_ms: 100
-  qrs_slope_frac: 0.2
+  qrs_slope_frac: 0.1        # 0,2 dava QRS normal de 42–69 ms em DS1 (D-17)
   qrs_valid_range_ms: [40, 220]
 
 model:

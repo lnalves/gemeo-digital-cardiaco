@@ -27,6 +27,8 @@ class DataConfig:
     ds2: tuple[str, ...]
     val_records: tuple[str, ...] | None
     n_val_records: int
+    val_min_beats: dict[str, int]
+    val_max_fraction: dict[str, float]
     aami_map: dict[str, tuple[str, ...]]
     classes: tuple[str, ...]
 
@@ -39,9 +41,25 @@ class SignalConfig:
 
 
 @dataclasses.dataclass(frozen=True)
+class RPeaksConfig:
+    mwi_ms: float
+    refractory_ms: float
+    learning_s: float
+    threshold_frac: float
+    peak_ema: float
+    rr_avg_beats: int
+    searchback_rr_factor: float
+    searchback_threshold_scale: float
+    searchback_peak_ema: float
+    twave_ms: float
+    twave_slope_frac: float
+
+
+@dataclasses.dataclass(frozen=True)
 class SegmentConfig:
     pre_samples: int
     post_samples: int
+    r_refine_ms: float
     normalize: str
 
 
@@ -125,6 +143,7 @@ class Config:
     seed: int
     data: DataConfig
     signal: SignalConfig
+    rpeaks: RPeaksConfig
     segment: SegmentConfig
     features: FeaturesConfig
     model: ModelConfig

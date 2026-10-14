@@ -2,17 +2,47 @@
 
 from __future__ import annotations
 
+import dataclasses
 import shutil
 import tempfile
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import numpy as np
 import wfdb
 
 from cardiac_twin.config import Config
 
 RECORD_EXTENSIONS = (".hea", ".dat", ".atr")
+
+
+@dataclasses.dataclass(frozen=True)
+class Record:
+    record_id: str
+    signal: np.ndarray  # one lead, physical units (mV), float64
+    fs: int
+    ann_samples: np.ndarray  # every annotation, beats and non-beats; see data.labels.beat_annotations
+    ann_symbols: tuple[str, ...]
+
+
+def load_record(record_id: str, raw_dir: Path, lead: str) -> Record:
+    """Read one lead and the `atr` annotations.
+
+    The lead is looked up by name: record 114 has MLII on the second channel.
+    """
+    path = str(raw_dir / record_id)
+    rec = wfdb.rdrecord(path)
+    if lead not in rec.sig_name:
+        raise ValueError(f"record {record_id} has no {lead} lead (leads: {rec.sig_name})")
+    ann = wfdb.rdann(path, "atr")
+    return Record(
+        record_id=record_id,
+        signal=rec.p_signal[:, rec.sig_name.index(lead)].astype(np.float64),
+        fs=int(rec.fs),
+        ann_samples=np.asarray(ann.sample, dtype=np.int64),
+        ann_symbols=tuple(ann.symbol),
+    )
 
 
 def all_records(cfg: Config) -> list[str]:
