@@ -84,7 +84,7 @@ evaluation:
 
 profile:
   calibration_seconds: 300
-  features: ["rr", "qrs_width", "r_amplitude"]
+  features: ["rr_pre", "qrs_width_ms", "r_amplitude"]   # chaves de signal.features.beat_features
   n_bins: 20                 # + 2 bins de transbordo (D-05)
   range_percentiles: [1, 99]
   eps: 1.0e-6
