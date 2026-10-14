@@ -61,6 +61,7 @@ model:
   cnn_filters: [32, 64, 128]
   cnn_kernels: [7, 5, 3]
   lstm_units: 64
+  attention_units: 64        # atenção aditiva (Bahdanau) sobre os K batimentos
   dense_units: 64
   dropout: 0.3
   lr: 0.001
@@ -69,7 +70,10 @@ model:
   patience: 8
   loss: weighted_ce          # weighted_ce | focal
   focal_gamma: 2.0
-  class_weight_cap: 50.0
+  class_weight_cap: 50.0     # focal usa os mesmos pesos como alfa: só γ difere da CE ponderada (D-18)
+
+evaluation:
+  macro_classes: ["N", "S", "V", "F"]   # macro sem Q (D-11); também é o critério do early stopping (D-15)
 
 profile:
   calibration_seconds: 300

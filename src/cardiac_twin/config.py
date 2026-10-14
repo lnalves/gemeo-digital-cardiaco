@@ -78,6 +78,7 @@ class ModelConfig:
     cnn_filters: tuple[int, ...]
     cnn_kernels: tuple[int, ...]
     lstm_units: int
+    attention_units: int
     dense_units: int
     dropout: float
     lr: float
@@ -87,6 +88,11 @@ class ModelConfig:
     loss: str
     focal_gamma: float
     class_weight_cap: float
+
+
+@dataclasses.dataclass(frozen=True)
+class EvaluationConfig:
+    macro_classes: tuple[str, ...]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -147,6 +153,7 @@ class Config:
     segment: SegmentConfig
     features: FeaturesConfig
     model: ModelConfig
+    evaluation: EvaluationConfig
     profile: ProfileConfig
     decision: DecisionConfig
     engine: EngineConfig
