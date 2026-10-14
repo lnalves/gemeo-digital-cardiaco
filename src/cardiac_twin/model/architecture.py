@@ -7,7 +7,6 @@ import numpy as np
 from keras import layers, ops
 
 from cardiac_twin.config import Config
-from cardiac_twin.signal.features import RR_FEATURE_NAMES
 
 ATTENTION_LAYER = "attention"
 
@@ -66,7 +65,7 @@ def build_model(cfg: Config, rr_mean: np.ndarray, rr_variance: np.ndarray) -> ke
     k = m.context_beats
     n = cfg.segment.pre_samples + cfg.segment.post_samples
     beats = layers.Input((k, n, 1), name="beats")
-    rr = layers.Input((k, len(RR_FEATURE_NAMES)), name="rr")
+    rr = layers.Input((k, len(m.rr_features)), name="rr")
 
     z = layers.TimeDistributed(_beat_encoder(cfg), name="beat_encoder")(beats)
     r = layers.Normalization(mean=rr_mean, variance=rr_variance, name="rr_norm")(rr)

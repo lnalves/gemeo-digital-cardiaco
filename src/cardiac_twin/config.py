@@ -66,6 +66,7 @@ class SegmentConfig:
 @dataclasses.dataclass(frozen=True)
 class FeaturesConfig:
     local_rr_beats: int
+    long_rr_beats: int
     qrs_search_ms: float
     qrs_slope_frac: float
     qrs_valid_range_ms: tuple[float, float]
@@ -75,6 +76,9 @@ class FeaturesConfig:
 class ModelConfig:
     context_beats: int
     future_beats: int
+    rr_features: tuple[str, ...]
+    augment_noise_std: float
+    augment_baseline_std: float
     cnn_filters: tuple[int, ...]
     cnn_kernels: tuple[int, ...]
     lstm_units: int

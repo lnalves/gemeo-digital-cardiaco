@@ -51,6 +51,7 @@ segment:
 
 features:
   local_rr_beats: 10
+  long_rr_beats: 300         # ritmo habitual do paciente (~5 min), média causal (D-19)
   qrs_search_ms: 100
   qrs_slope_frac: 0.1        # 0,2 dava QRS normal de 42–69 ms em DS1 (D-17)
   qrs_valid_range_ms: [40, 220]
@@ -58,6 +59,9 @@ features:
 model:
   context_beats: 5           # i-3 … i+1 (1 batimento futuro) — D-08
   future_beats: 1
+  rr_features: ["rr_pre", "rr_post", "rr_local", "rr_pre_ratio", "rr_post_ratio"]
+  augment_noise_std: 0.0     # ruído gaussiano por amostra (unidades do escore z), só no treino
+  augment_baseline_std: 0.0  # deslocamento + rampa linear aleatórios por batimento, só no treino
   cnn_filters: [32, 64, 128]
   cnn_kernels: [7, 5, 3]
   lstm_units: 64

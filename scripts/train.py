@@ -1,6 +1,7 @@
 """Train the beat classifier on DS1-train (early stopping on DS1-val) and save a run in artifacts/runs/."""
 
 import argparse
+import dataclasses
 
 from cardiac_twin.config import ROOT, add_config_argument, load_config
 from cardiac_twin.model.train import environment, train, with_loss
@@ -11,12 +12,17 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     add_config_argument(parser)
     parser.add_argument("--loss", choices=["weighted_ce", "focal"], default=None, help="default: model.loss")
+    parser.add_argument("--seed", type=int, default=None, help="default: seed in the config")
+    parser.add_argument("--tag", default="", help="experiment name added to the run name")
     args = parser.parse_args()
     cfg = load_config(args.config)
     if args.loss:
         cfg = with_loss(cfg, args.loss)
+    if args.seed is not None:
+        cfg = dataclasses.replace(cfg, seed=args.seed)
 
-    run_dir = create_run(cfg, f"train_{cfg.model.loss}", extra={"environment": environment()})
+    name = f"train_{cfg.model.loss}_s{cfg.seed}" + (f"_{args.tag}" if args.tag else "")
+    run_dir = create_run(cfg, name, extra={"environment": environment(), "tag": args.tag})
     print(f"run: {run_dir}")
     summary = train(cfg, ROOT / cfg.data.processed_dir, run_dir)
     update_run_info(run_dir, train_seconds=summary["train_seconds"], best_epoch=summary["best_epoch"])

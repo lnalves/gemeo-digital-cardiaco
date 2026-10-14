@@ -94,6 +94,25 @@ def test_dataset_yields_center_labels():
     np.testing.assert_array_equal(x["beats"].numpy(), gather_sequences(arrays, seqs)["beats"])
 
 
+def test_augmentation_changes_beats_but_not_rr_or_labels():
+    n = 12
+    rng = np.random.default_rng(1)
+    arrays = BeatArrays(
+        beats=rng.standard_normal((n, L)).astype(np.float32),
+        rr=rng.standard_normal((n, 5)).astype(np.float32),
+        labels=np.arange(n, dtype=np.int8) % C,
+        record_id=np.array(["a"] * n),
+    )
+    centers, seqs = sequence_index(arrays.record_id, K, 1)
+    kw = dict(batch_size=64, shuffle=False, seed=0)
+    x0, y0 = next(iter(make_dataset(arrays, centers, seqs, **kw)))
+    x1, y1 = next(iter(make_dataset(arrays, centers, seqs, noise_std=0.1, baseline_std=0.2, **kw)))
+    assert x1["beats"].shape == x0["beats"].shape
+    assert not np.allclose(x1["beats"], x0["beats"])
+    np.testing.assert_array_equal(x1["rr"], x0["rr"])
+    np.testing.assert_array_equal(y1, y0)
+
+
 def test_beat_classifier_is_deterministic_after_save_and_load(tmp_path):
     model = _model()
     model.save(tmp_path / MODEL_FILE)

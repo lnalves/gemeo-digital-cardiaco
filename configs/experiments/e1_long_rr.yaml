@@ -1,0 +1,4 @@
+# E1 (D-19): baseline + RR relativo ao ritmo habitual do paciente.
+model:
+  rr_features: ["rr_pre", "rr_post", "rr_local", "rr_pre_ratio", "rr_post_ratio",
+                "rr_pre_long_ratio", "rr_post_long_ratio", "rr_local_long_ratio"]

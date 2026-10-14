@@ -1,0 +1,6 @@
+# E2 (D-19): E1 + aumento de dados (ruído e linha de base) só no treino.
+model:
+  rr_features: ["rr_pre", "rr_post", "rr_local", "rr_pre_ratio", "rr_post_ratio",
+                "rr_pre_long_ratio", "rr_post_long_ratio", "rr_local_long_ratio"]
+  augment_noise_std: 0.05
+  augment_baseline_std: 0.1

@@ -21,7 +21,7 @@ def evaluate_classifier(cfg: Config, model_run: Path, processed_dir: Path, out_d
     """Classify every DS2 beat with a full K-beat context; save metrics, confusion matrix and predictions."""
     with np.load(processed_dir / TEST_FILE) as z:
         r_sample = z["r_sample"]
-    arrays = load_beats(processed_dir / TEST_FILE)
+    arrays = load_beats(processed_dir / TEST_FILE, cfg.model.rr_features)
     centers, seqs = sequence_index(arrays.record_id, cfg.model.context_beats, cfg.model.future_beats)
     inputs = gather_sequences(arrays, seqs)
     clf = BeatClassifier.load(model_run, cfg.data.classes, cfg.model.batch_size)

@@ -107,7 +107,7 @@ def train(cfg: Config, processed_dir: Path, run_dir: Path, verbose: int = 2) -> 
     keras.utils.set_random_seed(cfg.seed)
     m, classes = cfg.model, cfg.data.classes
     splits = get_splits(cfg.data)
-    ds1 = load_beats(processed_dir / TRAIN_FILE)
+    ds1 = load_beats(processed_dir / TRAIN_FILE, m.rr_features)
     train_a, val_a = ds1.select(splits.train), ds1.select(splits.val)
     train_c, train_s = _sequences(train_a, cfg)
     val_c, val_s = _sequences(val_a, cfg)
@@ -122,7 +122,16 @@ def train(cfg: Config, processed_dir: Path, run_dir: Path, verbose: int = 2) -> 
     )
     start = time.perf_counter()
     history = model.fit(
-        make_dataset(train_a, train_c, train_s, m.batch_size, shuffle=True, seed=cfg.seed),
+        make_dataset(
+            train_a,
+            train_c,
+            train_s,
+            m.batch_size,
+            shuffle=True,
+            seed=cfg.seed,
+            noise_std=m.augment_noise_std,
+            baseline_std=m.augment_baseline_std,
+        ),
         epochs=m.max_epochs,
         callbacks=[stopper],
         verbose=verbose,
