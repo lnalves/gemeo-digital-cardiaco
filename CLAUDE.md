@@ -49,6 +49,12 @@ Documentos de referência (fonte da verdade, nesta ordem):
 - TensorFlow/Keras 3 apenas em `model/`. O resto do sistema conversa com o modelo via `model.inference.BeatClassifier`.
 - Front-end em `dashboard/` (React + Vite + TypeScript). Não misture código Python lá.
 - Commits pequenos, mensagem em português no imperativo: `feat(profile): calcula limiar L = μ + kσ`.
+- Do not add redundant code comments or explain obvious code. Write clean code with zero inline comments unless explaining complex algorithmic edge cases. Always use ASD-STE100, or Simplified Technical English. Follow Zinsser's four principles of quality writing:
+
+   1. Simplicity
+   2. Brevity
+   3. Clarity
+   4. Humanity
 
 ## Comandos
 
