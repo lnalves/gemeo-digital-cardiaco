@@ -22,7 +22,8 @@ Marque `[x]` ao concluir. Cada fase termina com testes verdes e um "Resumo para 
 
 - [x] Mac (desenvolvimento/servidor): `uv sync --extra dev` (Python 3.11, CPU).
 - [ ] Máquina de treino: clonar o repo, `uv sync --extra dev --extra gpu-cuda` (WSL2 se for Windows) e confirmar
-      `tf.config.list_physical_devices('GPU')` não vazio. Ver D-10.
+      `tf.config.list_physical_devices('GPU')` não vazio. Ver D-10. GTX 1050 Ti no WSL2; TF 2.20 + cuDNN 9.3 e
+      `check_env.py --require-gpu` com passo de treino real (D-14).
 - [x] `scripts/download_data.py`: baixa `mitdb` via `wfdb.dl_database` para `data/raw/mitdb` (idempotente).
 - [x] `config.py`: carrega `configs/default.yaml` em dataclasses congeladas; `--config` sobrescreve.
 - [x] `ruff` e `pytest` rodando (mesmo sem testes).

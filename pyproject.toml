@@ -15,7 +15,7 @@ dependencies = [
     "pandas>=2.1",
     "wfdb>=4.1",
     "scikit-learn>=1.4",
-    "tensorflow>=2.16",
+    "tensorflow>=2.16,<2.21",  # 2.21 não acha libcusolver na GPU (D-14)
     "pyyaml>=6.0",
     "fastapi>=0.110",
     "uvicorn[standard]>=0.29",
@@ -26,7 +26,10 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "httpx>=0.27", "ruff>=0.4", "ipykernel>=6.29", "neurokit2>=0.2"]
-gpu-cuda = ["tensorflow[and-cuda]>=2.16; sys_platform == 'linux'"]
+gpu-cuda = [
+    "tensorflow[and-cuda]>=2.16,<2.21; sys_platform == 'linux'",
+    "nvidia-cudnn-cu12==9.3.0.75; sys_platform == 'linux'",  # cuDNN recente falha em Pascal/GTX 10xx (D-14)
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/cardiac_twin"]

@@ -102,6 +102,24 @@ Toda mudança de parâmetro ou desvio do PLANO entra aqui com data.
   nas duas máquinas). Ruff ≥ 0.9 formata blocos de código em Markdown; `*.md` foi excluído do `ruff format`.
 - **Impacto no TC:** nenhum.
 
+### D-14 — Máquina de treino: GTX 1050 Ti no WSL2, TensorFlow 2.20 e cuDNN 9.3 · `aceita` (14/10)
+- **Hardware:** Windows 11 + WSL2 (Ubuntu 26.04), NVIDIA GeForce GTX 1050 Ti, **4 GB de VRAM**, compute capability
+  6.1 (Pascal), driver 582.78; WSL com 12 núcleos e ~7 GB de RAM. Repositório clonado em `~/gemeo-digital-cardiaco`
+  (filesystem Linux; `/mnt/c` é lento para I/O).
+- **Problema 1 — TF 2.21:** `libtensorflow_framework.so.2` não tem `nvidia/cusolver/lib` no RUNPATH, então o
+  `dlopen("libcusolver.so.11")` falha e o TF desiste da GPU ("Cannot dlopen some GPU libraries"), embora o wheel esteja
+  instalado. → `tensorflow>=2.16,<2.21` (lock: **2.20.0**, mesma versão no Mac, para treino e inferência baterem).
+- **Problema 2 — cuDNN:** o resolvedor escolheu `nvidia-cudnn-cu12` 9.27, que não executa convolução em Pascal
+  (`No algorithm worked!`, status 5003) — a GPU aparece na lista, mas o primeiro `Conv1D` quebra. → extra `gpu-cuda`
+  fixa `nvidia-cudnn-cu12==9.3.0.75` (versão contra a qual o TF 2.20 foi compilado). Só afeta Linux.
+- **Checagem:** `scripts/check_env.py --require-gpu` agora roda um passo de gradiente Conv1D + LSTM na GPU e imprime
+  o nome e a compute capability; só listar o dispositivo não detecta o problema 2.
+- **Desempenho de referência:** modelo de teste (CNN por batimento + BiLSTM, K = 5, 4096 amostras, lote 256):
+  0,64 s/época na GPU × 1,64 s/época na CPU do WSL.
+- **Consequência para F2:** com 4 GB de VRAM, tamanho de lote e largura da rede precisam caber; se faltar memória,
+  reduzir `model.batch_size` (e registrar aqui) antes de mexer na arquitetura.
+- **Impacto no TC:** Seção 4.5 — hardware de treino (GPU, VRAM, TF 2.20, CUDA 12.5, cuDNN 9.3).
+
 ---
 
 ## Resolvidas
