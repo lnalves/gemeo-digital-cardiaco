@@ -12,7 +12,7 @@ def test_default_config_loads():
     assert cfg.seed == 42
     assert cfg.data.fs == 360
     assert cfg.signal.bandpass_hz == (0.5, 40.0)
-    assert cfg.profile.tuning_grid.k == (1.0, 1.5, 2.0, 2.5, 3.0)
+    assert cfg.profile.tuning_grid.k == (0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0)
     assert cfg.data.aami_map["V"] == ("V", "E")
     assert cfg.data.val_records == ("101", "124", "205", "207")
     assert cfg.engine.feedback_enabled is False

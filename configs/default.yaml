@@ -88,9 +88,9 @@ profile:
   n_bins: 20                 # + 2 bins de transbordo (D-05)
   range_percentiles: [1, 99]
   eps: 1.0e-6
-  window_seconds: 60
+  window_seconds: 30         # ajustado no DS1-val (D-26)
   step_seconds: 10
-  k: 2.0                     # ajustado em DS1-val (D-09)
+  k: 1.5                     # ajustado no DS1-val: run 20261014-173844_tune_profile (D-26)
   alpha: 0.1                 # taxa de atualização (Eq. 10)
   tuning_grid:
     k: [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
