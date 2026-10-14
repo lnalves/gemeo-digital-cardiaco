@@ -134,6 +134,7 @@ class EngineConfig:
     rpeak_source: str
     use_profile: bool
     feedback_enabled: bool
+    signal_buffer_seconds: float
 
 
 @dataclasses.dataclass(frozen=True)

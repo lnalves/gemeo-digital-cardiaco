@@ -106,6 +106,7 @@ engine:
   rpeak_source: detector     # detector | annotation (D-03)
   use_profile: true
   feedback_enabled: false    # SEMPRE false na avaliação quantitativa
+  signal_buffer_seconds: 10  # sinal filtrado guardado para recortar batimentos detectados com atraso
 
 server:
   host: 127.0.0.1
