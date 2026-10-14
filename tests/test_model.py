@@ -20,20 +20,21 @@ CFG = dataclasses.replace(
 K = CFG.model.context_beats
 L = CFG.segment.pre_samples + CFG.segment.post_samples
 C = len(CFG.data.classes)
+N_RR = len(CFG.model.rr_features)
 
 
 def _batch(n: int = 16, seed: int = 0):
     rng = np.random.default_rng(seed)
     x = {
         "beats": rng.standard_normal((n, K, L, 1)).astype(np.float32),
-        "rr": rng.uniform(0.5, 1.5, (n, K, 5)).astype(np.float32),
+        "rr": rng.uniform(0.5, 1.5, (n, K, N_RR)).astype(np.float32),
     }
     return x, rng.integers(0, C, n)
 
 
 def _model():
     keras.utils.set_random_seed(0)
-    return build_model(CFG, np.ones(5), np.full(5, 0.1))
+    return build_model(CFG, np.ones(N_RR), np.full(N_RR, 0.1))
 
 
 def test_output_shapes_and_attention_sums_to_one():
