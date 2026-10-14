@@ -93,9 +93,9 @@ profile:
   k: 2.0                     # ajustado em DS1-val (D-09)
   alpha: 0.1                 # taxa de atualização (Eq. 10)
   tuning_grid:
-    k: [1.0, 1.5, 2.0, 2.5, 3.0]
+    k: [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
     window_seconds: [30, 60, 90]
-  max_sensitivity_drop_pp: 5.0
+  max_sensitivity_drop_pp: 15.0   # 5 p.p. só admitia k = 0 (−4 % de FP) no DS1-val (D-26, A-06)
 
 decision:
   vt_consecutive_v: 3
