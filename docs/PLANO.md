@@ -93,10 +93,11 @@ completa do Quadro 5 (parametrizada); 3 V consecutivos → crítico mesmo com KL
 - [x] `engine/events.py` e `engine/pipeline.py` — conforme ARQUITETURA §7; estados calibrating → monitoring.
 - [x] `evaluation/replay.py` — alimenta o pipeline em blocos de 1 s sem dormir; registra `recv_ts/emit_ts` e
       rótulos verdadeiros (casamento ±150 ms).
-- [ ] `evaluation/compare.py` + `scripts/evaluate_system.py` — config A × B em todos os 22 registros DS2,
+- [x] `evaluation/compare.py` + `scripts/evaluate_system.py` — config A × B em todos os 22 registros DS2,
       feedback desligado, 5 min iniciais excluídos. Saídas: `per_record.csv`, `summary.json`, figuras
       (FP por registro A vs B, KL × L ao longo do tempo para 2 registros exemplares, boxplot de latência).
-- [ ] Wilcoxon pareado unilateral (FP(B) < FP(A)) por registro, α = 0,05 — **entra na Seção 4.6** (A-03):
+      Run `20261022-184514_eval_system` (D-27).
+- [x] Wilcoxon pareado unilateral (FP(B) < FP(A)) por registro, α = 0,05 — **entra na Seção 4.6** (A-03):
       reportar estatística W, p-valor e mediana das diferenças.
 
 **Testes:** pipeline em blocos ≡ pipeline com sinal inteiro (mesmas classes); nenhum evento antes do fim da

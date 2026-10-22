@@ -294,6 +294,29 @@ Toda mudança de parâmetro ou desvio do PLANO entra aqui com data.
 - **Impacto no TC:** Seção 4.5 — critério de escolha; Seção 4.6 — mostrar a curva FP × sensibilidade do DS1-val e o
   ponto escolhido, e discutir que o ganho em FP tem custo em sensibilidade (parágrafo honesto pedido na F4).
 
+### D-27 — Avaliação A × B em DS2: FP cai 69 %, sensibilidade de V cai 78 p.p. · `aceita` (22/10)
+- **Protocolo:** 22 registros de DS2, detector de R (`engine.rpeak_source: detector`), k = 1,5 e janela de 30 s da
+  D-26 sem novo ajuste, realimentação desligada, 300 s iniciais fora das métricas (9,20 h, 36 860 N, 1 608 S,
+  2 686 V). Run `20261022-184514_eval_system`; o run `…183805_eval_system` tem os mesmos números e foi refeito só para
+  gravar o método do Wilcoxon e o diagnóstico por registro.
+- **Resultado:** FP 8 279 → 2 581 (−68,8 %; 900 → 281 por hora), menor em 20 de 22 registros, igual em 2 (100, 202).
+  Wilcoxon pareado unilateral FP(B) < FP(A): W = 0, p = 4,4·10⁻⁵, mediana das diferenças B − A = −29. Sensibilidade
+  de alerta: S 0,618 → 0,440; V 0,988 → 0,207; S+V 0,849 → 0,294 (−55,5 p.p., contra −14,0 p.p. no DS1-val).
+- **Causa da queda de V (verificada, não é bug):** o perfil aprende o padrão dos 5 min iniciais, incluindo a
+  ectopia habitual. Nove registros têm 10 ou mais V na calibração (105, 200, 210, 213, 214, 219, 221, 228, 233) e
+  concentram 2 662 dos 2 686 V. Neles, a KL passa de L em só 9–60 % das janelas, e B alerta 539 V (20 %). Nos outros
+  13 registros B alerta 16 de 24 V (67 %). O DS1-val não tinha esse padrão na mesma proporção, por isso a queda lá
+  foi menor. Os alertas críticos (≥ 3 V seguidos) continuam, porque não dependem da KL.
+- **Wilcoxon:** 2 diferenças nulas e 3 empatadas → aproximação normal (`method: approx` no `summary.json`). É
+  conservadora: como as 20 diferenças não nulas são todas negativas, o p exato condicionado seria 2⁻²⁰ ≈ 9,5·10⁻⁷.
+- **Latência:** tempo de processamento por bloco de 1 s, p50 2,2 ms, p95 2,7 ms, máx. 110 ms (A) e 10 ms (B), na
+  CPU do Windows. Atraso algorítmico médio 2,38 s (D-25). O `BeatClassifier` agora traça o grafo ao carregar: antes,
+  o primeiro bloco pagava a compilação (~480 ms) e quase estourava o orçamento.
+- **Decisão:** nenhum ajuste depois de ver DS2. O custo em sensibilidade é resultado do TC e entra na Seção 4.6.
+- **Impacto no TC:** Seção 4.6 — tabela A × B, p-valor, figuras `f4_*` e o parágrafo sobre o custo. Seção 5
+  (conclusão) — a hipótese de redução de FP se confirma, mas o perfil, como definido, silencia arritmias que o
+  paciente já apresentava na calibração.
+
 ---
 
 ## Resolvidas
