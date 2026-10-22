@@ -63,7 +63,8 @@ def wilcoxon_fp(fp_a: Sequence[int], fp_b: Sequence[int], alpha: float) -> dict[
     """Paired one-sided Wilcoxon signed-rank test, H1: FP(B) < FP(A) (A-03).
 
     Zero differences are dropped (zero_method="wilcox"). W is the sum of the ranks of the positive
-    differences B − A; scipy selects the exact or the normal distribution.
+    differences B − A. The exact distribution is valid only without zeros and ties; otherwise the
+    normal approximation is used.
     """
     a = np.asarray(fp_a, dtype=float)
     b = np.asarray(fp_b, dtype=float)
@@ -72,18 +73,33 @@ def wilcoxon_fp(fp_a: Sequence[int], fp_b: Sequence[int], alpha: float) -> dict[
         "hypothesis": "FP(B) < FP(A)",
         "n_pairs": int(len(diff)),
         "n_nonzero": int(np.count_nonzero(diff)),
+        "n_tied": int(len(diff) - len(np.unique(np.abs(diff)))),
         "median_diff_b_minus_a": float(np.median(diff)),
         "alpha": alpha,
         "scipy": scipy.__version__,
     }
     if out["n_nonzero"] == 0:
         return {**out, "w": None, "p_value": None, "significant": False}
-    res = stats.wilcoxon(b, a, zero_method="wilcox", alternative="less")
+    method = "exact" if out["n_nonzero"] == len(diff) and out["n_tied"] == 0 else "approx"
+    res = stats.wilcoxon(b, a, zero_method="wilcox", alternative="less", method=method)
     return {
         **out,
+        "method": method,
         "w": float(res.statistic),
         "p_value": float(res.pvalue),
         "significant": bool(res.pvalue < alpha),
+    }
+
+
+def profile_diagnostics(b: ReplayResult, classes: Sequence[str], skip_seconds: float) -> dict[str, Any]:
+    """Arrhythmia already in the calibration and share of monitoring windows with KL > L."""
+    cal = b.ann_t <= skip_seconds
+    post = b.window_t > skip_seconds
+    above = b.window_kl[post] > b.window_threshold[post]
+    return {
+        "s_calibration": int((b.ann_label[cal] == classes.index("S")).sum()),
+        "v_calibration": int((b.ann_label[cal] == classes.index("V")).sum()),
+        "windows_above_threshold": float(above.mean()) if above.size else float("nan"),
     }
 
 
@@ -112,7 +128,7 @@ def compare_system(
         ma, mb = system_metrics(a, classes, skip), system_metrics(b, classes, skip)
         metrics_a.append(ma)
         metrics_b.append(mb)
-        rows.append(per_record_row(ma, mb))
+        rows.append({**per_record_row(ma, mb), **profile_diagnostics(b, classes, skip)})
 
     agg_a, agg_b = aggregate(metrics_a), aggregate(metrics_b)
     summary = {

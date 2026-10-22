@@ -1,3 +1,5 @@
+import dataclasses
+
 import numpy as np
 import pytest
 
@@ -11,6 +13,7 @@ from cardiac_twin.evaluation.compare import (
     plot_fp_per_record,
     plot_kl_threshold,
     plot_latency,
+    profile_diagnostics,
     wilcoxon_fp,
 )
 from cardiac_twin.evaluation.replay import NO_LABEL, ReplayResult, replay_record
@@ -52,6 +55,7 @@ def test_wilcoxon_one_sided_when_b_is_lower():
     fp_a = [10, 20, 30, 40, 50, 60, 70, 80]
     fp_b = [1, 2, 3, 4, 5, 6, 7, 8]
     w = wilcoxon_fp(fp_a, fp_b, 0.05)
+    assert w["method"] == "exact"
     assert w["w"] == 0
     assert w["p_value"] == pytest.approx(1 / 2**8)
     assert w["significant"]
@@ -62,6 +66,7 @@ def test_wilcoxon_drops_zero_differences():
     w = wilcoxon_fp([5, 5, 9, 7], [5, 5, 1, 2], 0.05)
     assert w["n_pairs"] == 4
     assert w["n_nonzero"] == 2
+    assert w["method"] == "approx"
     assert not w["significant"]
 
 
@@ -69,6 +74,14 @@ def test_wilcoxon_without_differences_is_not_significant():
     w = wilcoxon_fp([3, 4], [3, 4], 0.05)
     assert w["p_value"] is None
     assert not w["significant"]
+
+
+def test_profile_diagnostics():
+    r = _replay([NORMAL] * 10)
+    r = dataclasses.replace(r, ann_label=np.array([CLASSES.index("V")] * 3 + [0] * 7))
+    d = profile_diagnostics(r, CLASSES, 150)
+    assert (d["v_calibration"], d["s_calibration"]) == (3, 0)
+    assert d["windows_above_threshold"] == 0.0
 
 
 def test_b_alarms_must_be_a_subset_of_a():
