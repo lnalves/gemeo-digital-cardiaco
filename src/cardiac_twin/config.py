@@ -99,6 +99,8 @@ class ModelConfig:
 @dataclasses.dataclass(frozen=True)
 class EvaluationConfig:
     macro_classes: tuple[str, ...]
+    wilcoxon_alpha: float
+    latency_budget_ms: float
 
 
 @dataclasses.dataclass(frozen=True)

@@ -39,7 +39,8 @@ class ReplayResult:
     window_kl: np.ndarray
     window_threshold: np.ndarray
     window_level: np.ndarray
-    n_alerts: int
+    alert_t: np.ndarray
+    alert_episode: np.ndarray
     push_seconds: np.ndarray
 
 
@@ -68,7 +69,7 @@ def replay_record(
     chunk = round(cfg.engine.chunk_seconds * d.fs)
     beats: list[BeatEvent] = []
     windows: list[KLUpdate] = []
-    n_alerts = 0
+    alerts: list[Alert] = []
     push_seconds = []
     for start in range(0, len(rec.signal), chunk):
         recv = time.perf_counter()
@@ -80,7 +81,7 @@ def replay_record(
             elif isinstance(e, KLUpdate):
                 windows.append(e)
             elif isinstance(e, Alert):
-                n_alerts += 1
+                alerts.append(e)
     pipeline.finish()
 
     sample = np.array([b.sample for b in beats], dtype=np.int64)
@@ -114,6 +115,7 @@ def replay_record(
         window_kl=np.array([w.kl for w in windows]),
         window_threshold=np.array([w.threshold for w in windows]),
         window_level=np.array([w.level for w in windows], dtype=object),
-        n_alerts=n_alerts,
+        alert_t=np.array([a.t for a in alerts]),
+        alert_episode=np.array([a.episode_id for a in alerts], dtype=np.int64),
         push_seconds=np.array(push_seconds),
     )

@@ -81,6 +81,8 @@ model:
 
 evaluation:
   macro_classes: ["N", "S", "V", "F"]   # macro sem Q (D-11); também é o critério do early stopping (D-15)
+  wilcoxon_alpha: 0.05       # FP(B) < FP(A), pareado por registro, unilateral (A-03)
+  latency_budget_ms: 500     # RNF01: bloco → eventos (D-01)
 
 profile:
   calibration_seconds: 300

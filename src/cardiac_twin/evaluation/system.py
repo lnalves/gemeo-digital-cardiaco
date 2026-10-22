@@ -38,6 +38,7 @@ def system_metrics(r: ReplayResult, classes: Sequence[str], skip_seconds: float)
         "fp": int((alarm & (r.beat_true == n_idx)).sum()),
         "fp_spurious": int((alarm & (r.beat_true == NO_LABEL)).sum()),
         "n_beats_n": int((beat & (r.beat_true == n_idx)).sum()),
+        "episodes": len(np.unique(r.alert_episode[r.alert_t > skip_seconds])),
     }
     for name, labels in (("s", ["S"]), ("v", ["V"]), ("sv", ["S", "V"])):
         hit, total = sens(labels)
@@ -48,11 +49,14 @@ def system_metrics(r: ReplayResult, classes: Sequence[str], skip_seconds: float)
 
 
 def aggregate(rows: Sequence[dict[str, Any]]) -> dict[str, float]:
-    """Totals over records: FP, FP/h, alert sensitivity (S, V, S+V), alarms/h, latency and delay."""
-    total = {k: sum(r[k] for r in rows) for k in ("hours", "alarms", "fp", "fp_spurious", "n_beats_n")}
+    """Totals over records: FP, FP/h, alert sensitivity (S, V, S+V), alarms/h, episodes/h, latency, delay."""
+    total = {
+        k: sum(r[k] for r in rows) for k in ("hours", "alarms", "episodes", "fp", "fp_spurious", "n_beats_n")
+    }
     out: dict[str, float] = dict(total)
     out["fp_per_hour"] = total["fp"] / total["hours"] if total["hours"] else float("nan")
     out["alarms_per_hour"] = total["alarms"] / total["hours"] if total["hours"] else float("nan")
+    out["episodes_per_hour"] = total["episodes"] / total["hours"] if total["hours"] else float("nan")
     for name in ("s", "v", "sv"):
         hit = sum(r[f"alarmed_{name}"] for r in rows)
         n = sum(r[f"total_{name}"] for r in rows)

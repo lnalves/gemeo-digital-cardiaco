@@ -29,6 +29,7 @@ class BeatClassifier:
                 tf.TensorSpec((None, k, n_rr), tf.float32),
             ],
         )
+        self._call(tf.zeros((1, k, n, channels)), tf.zeros((1, k, n_rr)))
 
     @classmethod
     def load(cls, run_dir: Path, classes: tuple[str, ...], batch_size: int) -> BeatClassifier:
@@ -37,7 +38,7 @@ class BeatClassifier:
     def predict(self, beats: np.ndarray, rr: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """beats (m, K, 256[, channels]), rr (m, K, n_rr) → (class (m,), probs (m, C), attention (m, K)).
 
-        The model runs as a compiled graph: one call per chunk is cheap in streaming.
+        The model runs as a compiled graph, traced once in __init__: one call per chunk is cheap in streaming.
         """
         beats = np.asarray(beats, dtype=np.float32)
         if beats.ndim == 3:
