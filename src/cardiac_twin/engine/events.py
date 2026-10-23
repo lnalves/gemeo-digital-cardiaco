@@ -66,6 +66,9 @@ class Alert(Event):
     attention: list[float]
     kl: float | None
     threshold: float | None
+    context_samples: list[int]
+    segment_t0: int
+    segment: list[float]
 
 
 @dataclasses.dataclass(frozen=True)

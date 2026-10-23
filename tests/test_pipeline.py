@@ -127,3 +127,17 @@ def test_discard_updates_profile_only_with_feedback():
         late = [a for a in alerts if a.kl is not None]
         p.apply_decision(late[0].alert_id, "discard")
         assert p.profile.version == expected
+
+
+def test_alert_segment_covers_the_context_beats():
+    _, x = _record("119", 7)
+    events, _, _ = _run(x, FS, use_profile=False)
+    signal = np.concatenate([e.samples for e in events if e.kind == "signal"])
+    alerts = [e for e in events if isinstance(e, Alert)]
+    assert alerts
+    for a in alerts:
+        assert len(a.context_samples) == CFG.model.context_beats
+        assert a.context_samples[-1 - CFG.model.future_beats] == a.sample
+        assert a.segment_t0 <= a.context_samples[0] - CFG.segment.pre_samples or a.segment_t0 == 0
+        np.testing.assert_allclose(a.segment, signal[a.segment_t0 : a.segment_t0 + len(a.segment)])
+        assert a.segment_t0 + len(a.segment) >= a.context_samples[-1] + CFG.segment.post_samples

@@ -126,6 +126,11 @@ class StreamingPipeline:
     def profile(self):
         return self._monitor.profile
 
+    @property
+    def n_samples(self) -> int:
+        """Samples received so far: the `t0_sample` of the next chunk."""
+        return self._n
+
     def push(self, chunk: np.ndarray, t0_sample: int, recv_ts: float) -> list[Event]:
         if t0_sample != self._n:
             raise ValueError(f"expected chunk starting at {self._n}, got {t0_sample}")
@@ -259,7 +264,7 @@ class StreamingPipeline:
 
         events: list[Event] = []
         classes = self.classifier.classes
-        for c, k, p, a in zip(centers, pred, probs, attention, strict=True):
+        for c, seq, k, p, a in zip(centers, seqs, pred, probs, attention, strict=True):
             beat = self._stream[c]
             cls = classes[int(k)]
             score = self._score_at(beat.t)
@@ -278,13 +283,14 @@ class StreamingPipeline:
             common = dict(sample=beat.sample, t=beat.t, cls=cls, prob=p.tolist(), attention=a.tolist())
             events.append(BeatEvent(*stamp, **common, level=level, kl=kl, threshold=threshold))
             if level in (ALERT, CRITICAL):
-                events.append(self._alert(stamp, common, level, score))
+                events.append(self._alert(stamp, common, level, score, [b.sample for b in seq]))
             self._classified.append((beat.t, cls))
         self._stream = self._stream[self._next_center - self._past :]
         self._next_center = self._past
         return events
 
-    def _alert(self, stamp, common: dict, level: str, score: WindowScore | None) -> Alert:
+    def _alert(self, stamp, common: dict, level: str, score: WindowScore | None, context: list[int]) -> Alert:
+        """The alert carries the filtered signal of its K context beats, for the alert detail screen."""
         t = common["t"]
         if self._last_alert_t is None or t - self._last_alert_t > self.cfg.decision.episode_gap_s:
             self._episode += 1
@@ -293,6 +299,9 @@ class StreamingPipeline:
         self._alerts[alert_id] = score
         kl = None if score is None else score.kl
         threshold = None if score is None else score.threshold
+        start = max(context[0] - self._pre, self._offset)
+        stop = min(context[-1] + self._post, self._n)
+        segment = self._x[start - self._offset : stop - self._offset]
         return Alert(
             *stamp,
             alert_id=alert_id,
@@ -301,6 +310,9 @@ class StreamingPipeline:
             **common,
             kl=kl,
             threshold=threshold,
+            context_samples=context,
+            segment_t0=start,
+            segment=segment.tolist(),
         )
 
     def _score_at(self, t: float) -> WindowScore | None:
