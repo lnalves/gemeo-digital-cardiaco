@@ -317,6 +317,35 @@ Toda mudança de parâmetro ou desvio do PLANO entra aqui com data.
   (conclusão) — a hipótese de redução de FP se confirma, mas o perfil, como definido, silencia arritmias que o
   paciente já apresentava na calibração.
 
+### D-28 — Servidor, simulador e SQLite: contrato e escolhas de implementação · `aceita` (23/10)
+- **Uma `StreamingPipeline` por sessão**, a mesma classe da avaliação offline (regra 2). O servidor usa sempre o
+  detector de R: na execução não há anotações. O `push` roda numa thread de trabalho, com um lock por sessão; a
+  decisão do especialista usa o mesmo lock.
+- **Fonte da sessão:** `POST /api/sessions` com `source: "simulator"` (padrão) dispara `scripts/run_simulator.py` como
+  outro processo; com `source: "external"` o servidor só espera a fonte. O simulador fala só por WebSocket, então um
+  dispositivo real entra no lugar dele sem mudar o servidor (RNF05). O teste usa blocos de 0,37 s e de 1 s e recebe
+  os mesmos batimentos.
+- **Protocolo de `/ws/ingest` ampliado:** `hello` com `next_t0` (a fonte retoma de onde parou depois de cair),
+  `control` (pause/resume/stop) e `end` (fim do registro encerra a sessão). Pausar pede à fonte que pare: os blocos
+  que já estão a caminho ainda são processados, para não abrir buraco no sinal. Depois da pausa, o simulador
+  recomeça o relógio, sem rajada para recuperar o atraso.
+- **Alerta com trecho do sinal:** o evento `Alert` do engine passa a levar os picos R dos K batimentos de contexto e
+  o sinal filtrado entre eles, para o Detalhe do alerta (atenção sobre os batimentos). Não muda nenhuma decisão.
+- **Esquema (ARQUITETURA §8):** `events.kind` (beat | window) e `alerts.payload_json` (a mensagem `alert` inteira).
+  Só eventos de nível ≠ normal vão para `events`; todo batimento vai para `beats` (`prob` = probabilidade da classe).
+  O id do alerta no banco é `<sessão>-<amostra>`: o id do engine (`<registro>-<amostra>`) repete entre sessões.
+- **Difusão:** uma fila por dashboard; a fila cheia (`server.monitor_queue_size` = 2000, ~6 min de mensagens a 5×)
+  desconecta o dashboard lento (código 1013), que reconecta. A mensagem `signal` fecha as mensagens de cada bloco.
+- **Parâmetros novos:** `server.default_speed` = 1,0, `server.monitor_queue_size` = 2000, `server.hr_beats` = 10
+  (FC = média dos últimos 10 RR, só exibição).
+- **Lista de registros:** `GET /api/records` monta a lista em `data/mitbih.record_catalog`. Assim o teste de
+  vazamento continua sem mudança: o servidor não cita DS2. A demo usa DS2 só para mostrar o sistema, sem treino nem
+  ajuste (RNF02).
+- **Verificação:** 14 testes em `tests/test_server.py` (TestClient e um uvicorn real com o simulador), 4 em
+  `tests/test_storage.py`. Ensaio manual com o registro 100 a 200× e classificador falso: o servidor dispara o
+  simulador, a pausa segura o envio, os 1 806 blocos chegam, e a sessão termina com o perfil gravado.
+- **Impacto no TC:** Seção 4.5 — protocolo de ingestão e monitoramento, persistência e troca da fonte (RNF05).
+
 ---
 
 ## Resolvidas

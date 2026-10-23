@@ -194,24 +194,35 @@ Cada evento carrega `recv_ts` do bloco que o originou e `emit_ts` → base da me
 - `sessions(id, record_id, use_profile, feedback_enabled, started_at, ended_at, model_run)`
 - `profiles(id, session_id, version, bins_json, q_json, mu, sigma, k, L, created_at)`
 - `beats(session_id, sample, cls, prob, attention_json, true_label NULL)` — `true_label` só em avaliação
-- `events(id, session_id, sample, level, cls, kl, L, recv_ts, emit_ts)`
-- `alerts(id, session_id, event_id, episode_id, status[pending|confirmed|discarded], decided_at)`
+- `events(id, session_id, kind[beat|window], sample, level, cls, kl, L, recv_ts, emit_ts)` — só níveis ≠ normal
+- `alerts(id, session_id, event_id, episode_id, status[pending|confirmed|discarded], decided_at, payload_json)` —
+  `payload_json` guarda a mensagem `alert` inteira (trecho do sinal, atenção), para o Detalhe abrir pelo Histórico (D-28)
 
 ## 9. API e WebSocket (`server/`)
 
 REST:
-- `GET  /api/records` → registros disponíveis (DS2 na demo; DS1 marcado como "treino").
-- `POST /api/sessions` `{record_id, use_profile, feedback_enabled, speed}` → `{session_id}`; dispara o simulador.
-- `POST /api/sessions/{id}/pause | resume | stop`
-- `POST /api/alerts/{alert_id}/decision` `{decision: "confirm" | "discard"}`
-- `GET  /api/sessions/{id}/history` → eventos, alertas e decisões.
+- `GET  /api/records` → registros disponíveis (DS2 na demo; DS1 com `training: true`).
+- `GET  /api/sessions` · `GET /api/sessions/{id}` → sessões gravadas, com `status` e o último `state`.
+- `POST /api/sessions` `{record_id, use_profile, feedback_enabled, speed, source}` → `{session_id}`.
+  `source: "simulator"` (padrão) dispara `scripts/run_simulator.py` como outro processo;
+  `source: "external"` só espera a fonte conectar em `/ws/ingest` (simulador manual ou dispositivo real).
+- `POST /api/sessions/{id}/pause | resume | stop` → mensagem `state`; 409 se a sessão já terminou.
+- `POST /api/alerts/{alert_id}/decision` `{decision: "confirm" | "discard"}` → alerta gravado e `profile_version`
+  (novo, se houve realimentação); 404 alerta desconhecido, 409 alerta já decidido.
+- `GET  /api/sessions/{id}/history` → `{session, events, alerts, profiles}`; o status do alerta é a decisão.
 
 WebSockets:
-- `/ws/ingest/{session_id}` (simulador → servidor): `{"type":"chunk","t0":int,"fs":360,"samples":[...]}`
-- `/ws/monitor/{session_id}` (servidor → dashboard), mensagens com `type`:
-  `state` · `signal` (amostras filtradas) · `beat` `{sample, cls, prob, attention}` ·
-  `kl` `{t, value, L}` · `event` `{level, sample, cls, kl, L}` · `alert` `{id, episode_id, level, sample, segment, cls, prob, kl, L, attention}` ·
-  `profile_updated` `{version}` · `hr` `{bpm}`
+- `/ws/ingest/{session_id}` (fonte ↔ servidor). Fonte → servidor: `{"type":"chunk","t0":int,"fs":360,"samples":[...]}`
+  e, no fim do registro, `{"type":"end"}`. Servidor → fonte: `{"type":"hello","next_t0":int}` ao conectar (a fonte
+  continua dali depois de cair) e `{"type":"control","action":"pause"|"resume"|"stop"}`. Uma fonte por sessão (4409);
+  `fs` errado ou `t0` fora de sequência fecha com 4400. Blocos de qualquer tamanho dão o mesmo resultado.
+- `/ws/monitor/{session_id}` (servidor → dashboards, vários por sessão), mensagens com `type`:
+  `state` `{state, status, record_id, calibration_seconds, t}` · `signal` `{t0, fs, samples}` (filtradas; fecha as
+  mensagens de cada bloco) · `beat` `{sample, t, cls, prob, attention, level, kl, L}` ·
+  `kl` `{t, value, L, n_beats, level}` · `event` `{id, kind, level, sample, t, cls, kl, L}` (só nível ≠ normal) ·
+  `alert` `{id, episode_id, level, sample, t, cls, prob, kl, L, attention, context_samples, segment_t0, segment}` ·
+  `decision` `{id, decision}` · `profile_updated` `{version}` · `hr` `{bpm}`.
+  Um dashboard que fica `server.monitor_queue_size` mensagens atrás é desconectado (1013) e deve reconectar.
 
 O simulador é um processo separado que conversa só por WebSocket → trocar por um dispositivo real não altera
 os demais módulos (RNF05).
