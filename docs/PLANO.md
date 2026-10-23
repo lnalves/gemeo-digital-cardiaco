@@ -109,7 +109,7 @@ algorítmico médio), p-valor, 2 figuras, 1 parágrafo honesto sobre o custo em 
 
 ## F5 — Servidor, simulador, armazenamento
 
-- [ ] `storage/db.py` — esquema de ARQUITETURA §8; migração simples por `CREATE TABLE IF NOT EXISTS`.
+- [x] `storage/db.py` — esquema de ARQUITETURA §8; migração simples por `CREATE TABLE IF NOT EXISTS`.
 - [ ] `server/schemas.py` + `server/app.py` — REST e WS de ARQUITETURA §9; uma pipeline por sessão; broadcast para
       vários dashboards; CORS para `localhost:5173`.
 - [ ] `acquisition/simulator.py` + `scripts/run_simulator.py` — envia blocos de 1 s em tempo real (`--speed`).
