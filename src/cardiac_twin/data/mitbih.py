@@ -13,8 +13,10 @@ import numpy as np
 import wfdb
 
 from cardiac_twin.config import Config
+from cardiac_twin.data.splits import get_splits
 
 RECORD_EXTENSIONS = (".hea", ".dat", ".atr")
+TRAINING_SPLIT = "DS1"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -43,6 +45,21 @@ def load_record(record_id: str, raw_dir: Path, lead: str) -> Record:
         ann_samples=np.asarray(ann.sample, dtype=np.int64),
         ann_symbols=tuple(ann.symbol),
     )
+
+
+def record_duration_s(record_id: str, raw_dir: Path) -> float | None:
+    """Duration from the header only; None if the record is not downloaded."""
+    if missing_records(raw_dir, [record_id]):
+        return None
+    header = wfdb.rdheader(str(raw_dir / record_id))
+    return header.sig_len / header.fs
+
+
+def record_catalog(cfg: Config, raw_dir: Path) -> list[tuple[str, str, float | None, int]]:
+    """Records the server offers: DS2 for the demo, DS1 marked as training (ARQUITETURA §9)."""
+    splits = get_splits(cfg.data)
+    named = [(r, "DS2") for r in splits.ds2] + [(r, TRAINING_SPLIT) for r in splits.ds1]
+    return [(r, split, record_duration_s(r, raw_dir), cfg.data.fs) for r, split in named]
 
 
 def all_records(cfg: Config) -> list[str]:

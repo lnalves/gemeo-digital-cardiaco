@@ -110,10 +110,10 @@ algorítmico médio), p-valor, 2 figuras, 1 parágrafo honesto sobre o custo em 
 ## F5 — Servidor, simulador, armazenamento
 
 - [x] `storage/db.py` — esquema de ARQUITETURA §8; migração simples por `CREATE TABLE IF NOT EXISTS`.
-- [ ] `server/schemas.py` + `server/app.py` — REST e WS de ARQUITETURA §9; uma pipeline por sessão; broadcast para
+- [x] `server/schemas.py` + `server/app.py` — REST e WS de ARQUITETURA §9; uma pipeline por sessão; broadcast para
       vários dashboards; CORS para `localhost:5173`.
-- [ ] `acquisition/simulator.py` + `scripts/run_simulator.py` — envia blocos de 1 s em tempo real (`--speed`).
-- [ ] `POST /alerts/{id}/decision` chama `pipeline.apply_decision` e persiste; descarte com feedback ligado
+- [x] `acquisition/simulator.py` + `scripts/run_simulator.py` — envia blocos de 1 s em tempo real (`--speed`).
+- [x] `POST /alerts/{id}/decision` chama `pipeline.apply_decision` e persiste; descarte com feedback ligado
       atualiza perfil e emite `profile_updated`.
 
 **Testes:** `TestClient` FastAPI: criar sessão, enviar 10 s sintéticos, receber `beat`; decisão persiste;

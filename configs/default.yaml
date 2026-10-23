@@ -116,6 +116,9 @@ server:
   db_path: artifacts/cardiac_twin.sqlite
   model_run: artifacts/runs/20261014-154129_train_focal_s43_e1_long_rr  # modelo final (D-21)
   cors_origins: ["http://localhost:5173"]
+  default_speed: 1.0         # 1× = tempo real; o dashboard oferece 1× e 5× (ARQUITETURA §10)
+  monitor_queue_size: 2000   # mensagens por dashboard; fila cheia → cliente lento é desconectado (D-28)
+  hr_beats: 10               # FC exibida = média dos últimos RR
 
 paths:
   runs_dir: artifacts/runs

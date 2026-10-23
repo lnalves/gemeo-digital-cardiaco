@@ -146,6 +146,9 @@ class ServerConfig:
     db_path: str
     model_run: str | None
     cors_origins: tuple[str, ...]
+    default_speed: float
+    monitor_queue_size: int
+    hr_beats: int
 
 
 @dataclasses.dataclass(frozen=True)
