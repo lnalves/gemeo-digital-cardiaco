@@ -344,6 +344,11 @@ Toda mudança de parâmetro ou desvio do PLANO entra aqui com data.
 - **Verificação:** 14 testes em `tests/test_server.py` (TestClient e um uvicorn real com o simulador), 4 em
   `tests/test_storage.py`. Ensaio manual com o registro 100 a 200× e classificador falso: o servidor dispara o
   simulador, a pausa segura o envio, os 1 806 blocos chegam, e a sessão termina com o perfil gravado.
+  Com o modelo final (26/10): 3 testes em `tests/test_server_model.py` (registro 213 de DS2, configurações A e B)
+  mostram que o servidor dá os mesmos batimentos, classes, níveis, KL, L e alertas que o replay offline, sem
+  diferença numérica, com p95 do bloco abaixo de 500 ms. Ensaio manual com `run_server.py` e `run_simulator.py` a
+  100×: as duas sessões do 213 reproduzem os números do run `20261022-184514_eval_system` (FP 2 001 → 405, alarmes
+  2 487 → 517).
 - **Impacto no TC:** Seção 4.5 — protocolo de ingestão e monitoramento, persistência e troca da fonte (RNF05).
 
 ---
