@@ -121,12 +121,15 @@ trocar a fonte (cliente WS de teste) sem tocar no servidor (RNF05).
 
 ## F6 — Dashboard
 
-- [ ] Scaffold `npm create vite@latest dashboard -- --template react-ts`; uPlot; cliente WS com reconexão.
-- [ ] Telas: Seleção, Monitor, Detalhe do alerta, Histórico (ARQUITETURA §10). Textos em português.
-- [ ] Cores por classe consistentes com as figuras do TC; aviso RNF07 sempre visível.
-- [ ] Capturas de tela das 4 telas em `docs/figuras/` para a Seção 4.5.
+- [x] Scaffold `npm create vite@latest dashboard -- --template react-ts`; uPlot; cliente WS com reconexão. Node 24 LTS,
+      React 19, Vite 8; reconexão com espera crescente e recuperação pelo histórico (D-29).
+- [x] Telas: Seleção, Monitor, Detalhe do alerta, Histórico (ARQUITETURA §10). Textos em português.
+- [x] Cores por classe consistentes com as figuras do TC; aviso RNF07 sempre visível. Paleta validada para daltonismo (D-29).
+- [x] Capturas de tela das 4 telas em `docs/figuras/` para a Seção 4.5. `dashboard/scripts/screenshots.mjs`, registro 213 a 5×.
 
 **Aceite:** sessão de 30 min a 5× sem travar; navegador sem instalação (RNF04); latência visual aceitável.
+Verificado com `dashboard/scripts/soak.mjs` (registro 213, configuração A, 5×): 365 s, nenhum quadro acima de 500 ms,
+0 reconexões, 6,1 ms (p95) da mensagem ao quadro seguinte (D-29).
 
 ## F7 — Testes funcionais e material do TC
 

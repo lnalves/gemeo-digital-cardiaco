@@ -351,6 +351,42 @@ Toda mudança de parâmetro ou desvio do PLANO entra aqui com data.
   2 487 → 517).
 - **Impacto no TC:** Seção 4.5 — protocolo de ingestão e monitoramento, persistência e troca da fonte (RNF05).
 
+### D-29 — Dashboard: pilha, parâmetros, cores e desempenho · `aceita` (26/10)
+- **Pilha:** React 19, Vite 8, TypeScript 6 e uPlot 1.6 (Node 24 LTS). Sem biblioteca de rotas nem de estado:
+  rotas por `#hash` e um `MonitorStore` que aplica as mensagens de `/ws/monitor`. O React redesenha os painéis no
+  máximo a cada 250 ms; a faixa de ECG desenha direto do store a cada quadro em que algo mudou.
+- **Mesma fonte de parâmetros:** o `vite.config.ts` lê `configs/default.yaml` (endereço do servidor para o proxy,
+  `server.default_speed`, `profile.calibration_seconds`, `decision.vt_consecutive_v`). Os parâmetros só de exibição
+  ficam em `dashboard/src/config.ts`: janela do ECG 10 s (ARQUITETURA §10), velocidades 1× e 5×, atualização da tela
+  250 ms, reconexão de 0,5 s a 8 s (dobra a cada falha), 30 episódios na lista e 200 linhas por página no histórico.
+  A frequência de amostragem vem de `GET /api/records`.
+- **Reconexão:** o painel reconecta sozinho depois de queda ou do fechamento 1013 (fila cheia). A cada conexão ele
+  lê o histórico da sessão para recuperar os alertas e a versão do perfil perdidos. O código 4404 (sessão inativa)
+  encerra as tentativas e leva ao histórico.
+- **Cores por classe:** N cinza (`#898781`), S azul (`#2a78d6`), V laranja (`#eb6834`), F verde-água (`#1baf7a`),
+  Q cinza-escuro (`#52514e`); no tema escuro, os mesmos tons ajustados para o fundo escuro. S, V e F foram validados
+  para daltonismo (protanopia e deuteranopia, ΔE ≥ 9,2 entre todos os pares). N e Q são neutros: N é a maioria e
+  não deve chamar atenção. Todo marcador leva também a letra da classe, então a cor nunca é a única pista. As
+  figuras da F7 que mostrarem classes usam estes mesmos valores.
+- **Níveis:** atenção amarelo, alerta laranja-claro, crítico vermelho, sempre com ícone e rótulo; essas cores não
+  são usadas para classes.
+- **Textos (RNF07):** a faixa "Ferramenta de apoio à decisão… não constituem diagnóstico" fica fixa no topo de todas
+  as telas. O alerta diz "batimento sugerido como …, revise o traçado"; nunca afirma diagnóstico. Um teste de
+  unidade confere isso.
+- **Episódios na lista:** a lista de pendentes agrupa os alertas por `episode_id` e mostra o mais grave do episódio.
+  A decisão continua sendo por alerta (um de cada vez), para não mudar o número de atualizações do perfil (Eq. 10).
+- **Capturas e aceite:** `dashboard/scripts/screenshots.mjs` e `dashboard/scripts/soak.mjs` usam `playwright-core`
+  com o Edge já instalado (sem baixar navegador).
+- **Aceite (26/10):** registro 213 inteiro, configuração A (a que mais gera alertas), 5×, modelo final, Edge sem
+  interface no Windows: 365 s de relógio para 30 min de sinal, 11 978 mensagens, 2 487 alertas (o mesmo número do
+  run `20261022-184514_eval_system`), quadro p50 6,9 ms e máximo 104 ms, nenhum quadro acima de 500 ms, mensagem →
+  quadro seguinte p95 6,1 ms (máx. 6,9 ms), 0 reconexões, 54 MB de memória JavaScript no fim.
+- **Achado (não muda nada nesta fase):** o modelo final põe quase toda a atenção no batimento i+1. Nas 3 sessões do
+  registro 213 (6 910 batimentos), a média é 96–97 % em i+1 e 3–4 % em i; em 78–81 % dos batimentos um só peso
+  passa de 0,99. A camada de atenção está certa (softmax sobre as saídas da BiLSTM); é o comportamento aprendido.
+  Por isso, no Detalhe do alerta a atenção quase sempre destaca i+1, e não o batimento classificado. Ver A-07.
+- **Impacto no TC:** Seção 4.5 — telas, cores e aviso RNF07; figuras `f6_*`.
+
 ---
 
 ## Resolvidas
@@ -365,4 +401,8 @@ Toda mudança de parâmetro ou desvio do PLANO entra aqui com data.
 
 ## Em aberto
 
-- (nenhuma)
+- **A-07** (26/10) Atenção concentrada em i+1 (D-29). O RNF03 e a Seção 4.5 apresentam a atenção como explicação
+  de quais batimentos pesaram na classificação. Com o modelo final ela quase sempre aponta o batimento seguinte, então
+  não serve bem para isso. Opções: (a) manter e descrever no TC que a atenção aprendida se concentra em i+1, como
+  limitação; (b) retreinar com regularização da atenção (por exemplo, entropia), o que muda o classificador e
+  exige refazer F2–F4. Decisão da autora/orientadora; o dashboard mostra a atenção como ela é nos dois casos.
